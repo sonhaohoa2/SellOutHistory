@@ -1,9 +1,7 @@
 <!DOCTYPE html>
-<html lang="vi">
-<head>
-<meta charset="utf-8">
+<html lang="vi"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Dashboard Sell Out – Team SON HAO HOA</title>
+<title>Dashboard Sell Out – Team Nhà xong móng đang hoàn thiện</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700;800&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -28,68 +26,50 @@ h2{font-size:14px;margin:22px 0 10px;color:var(--gold);text-transform:uppercase;
 .g{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:12px;margin-bottom:12px}.c h3{margin:0 0 10px;font-size:13px;color:var(--ink);font-weight:700}
 .sw{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:7px 9px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
 th:first-child,td:first-child{text-align:left}th{color:var(--gold);font-weight:700;font-size:12px}tr.sel td{background:rgba(255,194,14,.16)}
+tr.sr-row{cursor:pointer;transition:background 0.2s}tr.sr-row:hover{background:rgba(255,194,14,.1)}tr.sr-active td{background:rgba(255,194,14,.28)!important;font-weight:bold}
 .db{display:inline-block;height:6px;background:var(--gold);border-radius:3px;vertical-align:middle;margin-right:6px}
 #set,#qa{display:none;background:var(--card);border:1px solid var(--gold);border-radius:10px;padding:14px;margin-bottom:12px}#set.show,#qa.show{display:block}
 #set input{width:84px}.row{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin-top:8px}
-</style>
-</head>
-<body>
-<header>
-  <h1>Dashboard Sell Out – Team SR<small id="sub">Kéo thả file Sell out history.xlsx vào để bắt đầu</small></h1>
-  <button class="ib" id="bQa" title="Chất lượng data" aria-label="Chất lượng data"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 5-5"/></svg></button>
-  <button class="ib" id="bSet" title="Cấu hình KPI" aria-label="Cấu hình KPI"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button>
-  <button class="ib" id="bNew" title="Đổi file" aria-label="Đổi file"><svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 16v4h16v-4"/></svg></button>
-</header>
+.sr-filter-banner{background:rgba(255,194,14,.15);border:1px solid var(--gold);padding:8px 14px;border-radius:8px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;color:var(--gold);font-weight:bold}
+.sr-filter-banner button{background:var(--gold);color:#000;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-weight:bold}
+</style></head><body>
+<header><h1>Dashboard Sell Out – Team Nhà xong móng đang hoàn thiện<small id="sub">Kéo thả file Sell out history.xlsx vào để bắt đầu</small></h1>
+<button class="ib" id="bQa" title="Chất lượng data" aria-label="Chất lượng data"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 5-5"/></svg></button>
+<button class="ib" id="bSet" title="Cấu hình KPI" aria-label="Cấu hình KPI"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button>
+<button class="ib" id="bNew" title="Đổi file" aria-label="Đổi file"><svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 16v4h16v-4"/></svg></button></header>
 <main>
-  <div id="drop"><b>Kéo thả file Excel vào đây</b><p>hoặc bấm để chọn file (.xlsx). Dữ liệu xử lý ngay trên máy bạn.</p></div>
-  <input type="file" id="f" accept=".xlsx,.xls,.csv" hidden>
-  <div id="app" hidden>
-    <div id="set">
-      <b style="color:var(--gold)">Cấu hình KPI</b>
-      <div class="row" id="fac"></div>
-      <div class="row"><label>Ngưỡng Dis<input type="number" id="thr" step="0.5"></label></div>
-      <h3 style="margin:14px 0 0;font-size:13px" id="tgh"></h3>
-      <div class="sw"><table id="tg" style="max-width:420px"></table></div>
-    </div>
-    <div id="qa"></div>
-    <div class="bar">
-      <label>Tháng<select id="fM"></select></label>
-      <label>Nhóm KH<select id="fC"></select></label>
-    </div>
-    <h2 id="h0"></h2>
-    <div class="kpis" id="kp"></div>
-    <h2>Tiến độ Target</h2>
-    <div class="c"><div class="sw"><table id="tp"></table></div></div>
-    <h2>STR (Vol) và Dis 3+ theo NV bán hàng</h2>
-    <div class="g">
-      <div class="c"><h3>Vol theo NV</h3><canvas id="c1"></canvas></div>
-      <div class="c"><h3 id="t2"></h3><canvas id="c2"></canvas></div>
-    </div>
-    <h2>Theo SKU</h2>
-    <div class="g">
-      <div class="c"><h3>Vol theo SKU</h3><canvas id="c3"></canvas></div>
-      <div class="c"><h3 id="t4"></h3><canvas id="c4"></canvas></div>
-    </div>
-    <div class="c"><h3>Đóng góp của SR</h3><div class="sw"><table id="tb"></table></div></div>
-    <h2>New POC và New SKU</h2>
-    <div class="g">
-      <div class="c"><h3>New POC theo NV</h3><canvas id="c5"></canvas></div>
-      <div class="c"><h3>New SKU theo NV</h3><canvas id="c8"></canvas></div>
-    </div>
-    <div class="c"><h3>Danh sách New POC</h3><div class="sw" style="max-height:340px;overflow-y:auto"><table id="np"></table></div></div>
-    <h2>So sánh Week</h2>
-    <div class="c"><div class="sw"><table id="tw2"></table></div></div>
-    <div class="g" style="margin-top:12px">
-      <div class="c"><h3 id="t6"></h3><canvas id="c6"></canvas></div>
-      <div class="c"><h3 id="t7"></h3><canvas id="c7"></canvas></div>
-    </div>
-  </div>
-</main>
-
+<div id="drop"><b>Kéo thả file Excel vào đây</b><p>hoặc bấm để chọn file (.xlsx). Dữ liệu xử lý ngay trên máy bạn.</p></div>
+<input type="file" id="f" accept=".xlsx,.xls,.csv" hidden>
+<div id="app" hidden>
+<div id="set"><b style="color:var(--gold)">Cấu hình KPI</b>
+<div class="row" id="fac"></div><div class="row"><label>Ngưỡng Dis<input type="number" id="thr" step="0.5"></label></div>
+<h3 style="margin:14px 0 0;font-size:13px" id="tgh"></h3><div class="sw"><table id="tg" style="max-width:420px"></table></div></div>
+<div id="qa"></div>
+<div id="srBanner" class="sr-filter-banner" style="display:none">
+  <span>Đang lọc dữ liệu theo SR: <span id="srSelectedName"></span></span>
+  <button id="btnClearSr">Xem tất cả SR</button>
+</div>
+<div class="bar"><label>Tháng<select id="fM"></select></label><label>Nhóm KH<select id="fC"></select></label></div>
+<h2 id="h0"></h2><div class="kpis" id="kp"></div>
+<h2>Tiến độ Target</h2><div class="c"><div class="sw"><table id="tp"></table></div></div>
+<h2>STR (Vol) và Dis 3+ theo NV bán hàng</h2>
+<div class="g"><div class="c"><h3>Vol theo NV</h3><canvas id="c1"></canvas></div><div class="c"><h3 id="t2"></h3><canvas id="c2"></canvas></div></div>
+<h2>Theo SKU</h2>
+<div class="g"><div class="c"><h3>Vol theo SKU</h3><canvas id="c3"></canvas></div><div class="c"><h3 id="t4"></h3><canvas id="c4"></canvas></div></div>
+<div class="c"><h3>Đóng góp của SR</h3><div class="sw"><table id="tb"></table></div></div>
+<h2>New POC và New SKU</h2>
+<div class="g"><div class="c"><h3>New POC theo NV</h3><canvas id="c5"></canvas></div><div class="c"><h3>New SKU theo NV</h3><canvas id="c8"></canvas></div></div>
+<div class="c"><h3>Danh sách New POC</h3><div class="sw" style="max-height:340px;overflow-y:auto"><table id="np"></table></div></div>
+<h2>So sánh Week</h2>
+<div class="c"><div class="sw"><table id="tw2"></table></div></div>
+<div class="g" style="margin-top:12px"><div class="c"><h3 id="t6"></h3><canvas id="c6"></canvas></div><div class="c"><h3 id="t7"></h3><canvas id="c7"></canvas></div></div>
+</div></main>
 <script>
 const SK=[['BUD330','Bud 330','#e0182d'],['BUD250','Bud 250','#ff7a8a'],['BUD ZERO 0.0','Bud Zero','#8f1020'],['ULTRA330','Ultra 330','#3d8bff'],['ULTRA250','Ultra 250','#9cc4ff'],['CO250','Corona 250','#f2b705']];
 const RED='#e0182d',ULT='#3d8bff',PINK='#f08fb0',COR='#f2b705',GOLD='#ffc20e';
 let R=[],ST={thr:3,fac:Object.fromEntries(SK.map(s=>[s[0],1])),tg:{}},CH={};
+let selectedSR = null;
+
 try{Object.assign(ST,JSON.parse(localStorage.getItem('sr_cfg3')||'{}'))}catch(e){}
 Chart.defaults.color='#cfc8b6';Chart.defaults.borderColor='rgba(255,255,255,.08)';Chart.defaults.font.family="'Be Vietnam Pro',system-ui,sans-serif";
 const $=i=>document.getElementById(i),nf=n=>Math.round(n*10)/10,fm=n=>nf(n).toLocaleString('vi-VN'),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -125,32 +105,131 @@ function buildTg(){const M=$('fM').value,T=ST.tg[M]||{};$('tgh').textContent='Ta
 function save(){try{localStorage.setItem('sr_cfg3',JSON.stringify(ST))}catch(e){}draw()}
 function mkc(id,cfg){if(CH[id])CH[id].destroy();cfg.options=Object.assign({responsive:true,maintainAspectRatio:true},cfg.options);CH[id]=new Chart($(id),cfg)}
 const H={indexAxis:'y',aspectRatio:1.5},HS={indexAxis:'y',aspectRatio:1.5,scales:{x:{stacked:true},y:{stacked:true}}},NL={plugins:{legend:{display:false}}};
-function draw(){const M=+$('fM').value,K=$('fK').value,y=Math.floor(M/100),mo=M%100,dim=new Date(y,mo,0).getDate(),now=new Date(),ck=now.getFullYear()*100+now.getMonth()+1;
+
+function toggleSR(srName) {
+  if (selectedSR === srName) {
+    selectedSR = null;
+  } else {
+    selectedSR = srName;
+  }
+  draw();
+}
+
+function draw(){
+ const M=+$('fM').value,K='vol',y=Math.floor(M/100),mo=M%100,dim=new Date(y,mo,0).getDate(),now=new Date(),ck=now.getFullYear()*100+now.getMonth()+1;
  const D='Dis '+ST.thr+'+',KL={vol:'Vol',dis:D,np:'New POC',ns:'New SKU'};
- const base=R.filter(r=>$('fC').value=='all'||r.cls==$('fC').value),sc=base.filter(r=>mk(r)==M),mt=met(sc);
+ 
+ if (selectedSR) {
+   $('srBanner').style.display = 'flex';
+   $('srSelectedName').textContent = selectedSR;
+ } else {
+   $('srBanner').style.display = 'none';
+ }
+
+ const baseAll=R.filter(r=>$('fC').value=='all'||r.cls==$('fC').value);
+ const base=selectedSR ? baseAll.filter(r=>r.nv===selectedSR) : baseAll;
+
+ const sc=base.filter(r=>mk(r)==M),mt=met(sc);
+ const scAll=baseAll.filter(r=>mk(r)==M),mtAll=met(scAll);
+
  const cut=ck==M?now.getDate():31,pm=mo==1?(y-1)*100+12:M-1,lm=met(base.filter(r=>mk(r)==pm&&r.d.getDate()<=cut)),mtd=met(sc.filter(r=>r.d.getDate()<=cut||mk(r)!=ck));
- const rem=ck==M?dim-now.getDate()+1:M>ck?dim:0,T=ST.tg[M]||{},tv=Object.values(T).reduce((a,t)=>a+(t.vol||0),0),td=Object.values(T).reduce((a,t)=>a+(t.dis||0),0),TT={vol:tv,dis:td};
- $('h0').textContent='Tổng quan Sales Sup · '+ml(M);$('t2').textContent=D+' theo NV';$('t4').textContent=D+' theo SKU';
+ const rem=ck==M?dim-now.getDate()+1:M>ck?dim:0,T=ST.tg[M]||{};
+ 
+ let tv=0, td=0;
+ if(selectedSR){
+   tv = (T[selectedSR]||{}).vol||0;
+   td = (T[selectedSR]||{}).dis||0;
+ } else {
+   tv = Object.values(T).reduce((a,t)=>a+(t.vol||0),0);
+   td = Object.values(T).reduce((a,t)=>a+(t.dis||0),0);
+ }
+ const TT={vol:tv,dis:td};
+
+ $('h0').textContent='Tổng quan Sales Sup · '+ml(M) + (selectedSR ? ' (' + selectedSR + ')' : '');
+ $('t2').textContent=D+' theo NV';$('t4').textContent=D+' theo SKU';
+ 
  $('kp').innerHTML=[['Vol','vol',RED],[D,'dis',ULT],['New POC','np',PINK],['New SKU','ns',COR]].map(c=>{const k=c[1],a=mt[k],t=TT[k],g=Math.max(0,t-a);
   return '<div class="k" style="--c:'+c[2]+'"><div class="l">'+c[0]+'</div><div class="n">'+fm(a)+'</div><div class="d">LM cùng ngày: <b>'+fm(lm[k])+'</b> '+dl(mtd[k],lm[k])+'</div>'+
-  (t?'<div class="d">Target <b>'+fm(t)+'</b> · ĐT <b>'+Math.round(a/t*100)+'%</b></div><div class="d">Gap <b>'+fm(g)+'</b>'+(g&&rem?' · '+fm(g/rem)+'/ngày (còn '+rem+' ngày)':'')+'</div>':'')+'</div>'}).join('');
- const G=grp(sc,r=>r.nv),st=Object.keys(G).map(n=>({n,...met(G[n]),G:G[n]})).sort((a,b)=>b.vol-a.vol);
+  (t?'<div class="d">Target <b>'+fm(t)+'</b> · Actual <b>'+Math.round(a/t*100)+'%</b></div><div class="d">Gap <b>'+fm(g)+'</b>'+(g&&rem?' · '+fm(g/rem)+'/ngày (còn '+rem+' ngày)':'')+'</div>':'')+'</div>'}).join('');
+
+ const G=grp(scAll,r=>r.nv),st=Object.keys(G).map(n=>({n,...met(G[n]),G:G[n]})).sort((a,b)=>b.vol-a.vol);
+ 
  const pc=(a,t)=>t?'<span class="db" style="width:'+Math.min(60,Math.round(a/t*60))+'px"></span>'+Math.round(a/t*100)+'%':'–',gp=(a,t)=>t?fm(Math.max(0,t-a)):'–',gd=(a,t)=>t&&rem?fm(Math.max(0,t-a)/rem):'–';
- const row=(n,m,t)=>'<tr><td>'+n+'</td><td>'+fm(m.vol)+'</td><td>'+(t.vol?fm(t.vol):'–')+'</td><td>'+pc(m.vol,t.vol)+'</td><td>'+gp(m.vol,t.vol)+'</td><td>'+gd(m.vol,t.vol)+'</td><td>'+m.dis+'</td><td>'+(t.dis?fm(t.dis):'–')+'</td><td>'+pc(m.dis,t.dis)+'</td><td>'+gp(m.dis,t.dis)+'</td><td>'+gd(m.dis,t.dis)+'</td></tr>';
- $('tp').innerHTML='<tr><th>NV bán hàng</th><th>Vol</th><th>Target</th><th>% ĐT</th><th>Gap</th><th>Gap/ngày</th><th>'+D+'</th><th>Target</th><th>% ĐT</th><th>Gap</th><th>Gap/ngày</th></tr>'+st.map(s=>row(esc(s.n),s,T[s.n]||{})).join('')+row('<b>Tổng</b>',mt,{vol:tv,dis:td});
- mkc('c1',{type:'bar',data:{labels:st.map(s=>s.n),datasets:SK.map(k=>({label:k[1],backgroundColor:k[2],data:st.map(s=>nf(s.G.reduce((a,r)=>a+nat(r,k[0]),0)))}))},options:HS});
- const sd=[...st].sort((a,b)=>b.dis-a.dis);mkc('c2',{type:'bar',data:{labels:sd.map(s=>s.n),datasets:[{label:D,backgroundColor:ULT,data:sd.map(s=>s.dis)}]},options:{...H,...NL}});
- const dn=(id,v)=>mkc(id,{type:'doughnut',data:{labels:SK.map(k=>k[1]),datasets:[{data:v.map(nf),backgroundColor:SK.map(k=>k[2]),borderColor:'#161616',borderWidth:2}]},options:{plugins:{legend:{position:'right'}}}});
- dn('c3',SK.map(k=>sc.reduce((a,r)=>a+nat(r,k[0]),0)));dn('c4',SK.map(k=>disN(sc,r=>nat(r,k[0]))));
+ const row=(n,m,t,isTotal=false)=>{
+   const cls = isTotal ? '' : 'sr-row' + (selectedSR===n ? ' sr-active' : '');
+   const attr = isTotal ? '' : 'onclick="toggleSR(\''+esc(n)+'\')"';
+   return '<tr class="'+cls+'" '+attr+'><td>'+n+'</td><td>'+fm(m.vol)+'</td><td>'+(t.vol?fm(t.vol):'–')+'</td><td>'+pc(m.vol,t.vol)+'</td><td>'+gp(m.vol,t.vol)+'</td><td>'+gd(m.vol,t.vol)+'</td><td>'+m.dis+'</td><td>'+(t.dis?fm(t.dis):'–')+'</td><td>'+pc(m.dis,t.dis)+'</td><td>'+gp(m.dis,t.dis)+'</td><td>'+gd(m.dis,t.dis)+'</td></tr>';
+ };
+ $('tp').innerHTML='<tr><th>NV bán hàng</th><th>Vol</th><th>Target</th><th>Actual</th><th>Gap</th><th>Gap/ngày</th><th>'+D+'</th><th>Target</th><th>Actual</th><th>Gap</th><th>Gap/ngày</th></tr>'+st.map(s=>row(esc(s.n),s,T[s.n]||{})).join('')+row('<b>Tổng</b>',mtAll,{vol:tv,dis:td},true);
+
+ const handleChartClick = (e, elements, chartInstance) => {
+   if (elements && elements.length > 0) {
+     const index = elements[0].index;
+     const srName = chartInstance.data.labels[index];
+     toggleSR(srName);
+   }
+ };
+
+ mkc('c1',{type:'bar',data:{labels:st.map(s=>s.n),datasets:SK.map(k=>({label:k[1],backgroundColor:k[2],data:st.map(s=>nf(s.G.reduce((a,r)=>a+nat(r,k[0]),0)))}))},options:{...HS, onClick: handleChartClick}});
+ const sd=[...st].sort((a,b)=>b.dis-a.dis);
+ mkc('c2',{type:'bar',data:{labels:sd.map(s=>s.n),datasets:[{label:D,backgroundColor:ULT,data:sd.map(s=>s.dis)}]},options:{...H,...NL, onClick: handleChartClick}});
+
+ const getPieOptions = () => ({
+   plugins: {
+     legend: { position: 'right' },
+     tooltip: {
+       callbacks: {
+         label: function(context) {
+           let label = context.label || '';
+           if (label) label += ': ';
+           let value = context.raw || 0;
+           let total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+           let percentage = total ? Math.round((value / total) * 100) : 0;
+           return label + fm(value) + ' (' + percentage + '%)';
+         }
+       }
+     }
+   }
+ });
+
+ const dn = (id, v) => {
+   let total = v.reduce((a, b) => a + b, 0);
+   let labelsWithPct = SK.map((k, i) => {
+     let pct = total ? Math.round((v[i] / total) * 100) : 0;
+     return k[1] + ' (' + pct + '%)';
+   });
+
+   mkc(id, {
+     type: 'doughnut',
+     data: {
+       labels: labelsWithPct,
+       datasets: [{ data: v.map(nf), backgroundColor: SK.map(k => k[2]), borderColor: '#161616', borderWidth: 2 }]
+     },
+     options: getPieOptions()
+   });
+ };
+
+ dn('c3', SK.map(k => sc.reduce((a, r) => a + nat(r, k[0]), 0)));
+ dn('c4', SK.map(k => disN(sc, r => nat(r, k[0]))));
+
  const sh=(v,t)=>t?'<span class="db" style="width:'+Math.round(v/t*50)+'px"></span>'+Math.round(v/t*100)+'%':'–',sdis=st.reduce((a,x)=>a+x.dis,0);
  $('tb').innerHTML='<tr><th>NV bán hàng</th><th>Vol</th><th>% Vol</th><th>'+D+'</th><th>% Dis</th><th>New POC</th><th>% New POC</th><th>New SKU</th><th>% New SKU</th></tr>'+
- st.map(s=>'<tr><td>'+esc(s.n)+'</td><td>'+fm(s.vol)+'</td><td>'+sh(s.vol,mt.vol)+'</td><td>'+s.dis+'</td><td>'+sh(s.dis,sdis)+'</td><td>'+s.np+'</td><td>'+sh(s.np,mt.np)+'</td><td>'+s.ns+'</td><td>'+sh(s.ns,mt.ns)+'</td></tr>').join('');
+ st.map(s=>{
+   const cls = 'sr-row' + (selectedSR===s.n ? ' sr-active' : '');
+   return '<tr class="'+cls+'" onclick="toggleSR(\''+esc(s.n)+'\')"><td>'+esc(s.n)+'</td><td>'+fm(s.vol)+'</td><td>'+sh(s.vol,mtAll.vol)+'</td><td>'+s.dis+'</td><td>'+sh(s.dis,sdis)+'</td><td>'+s.np+'</td><td>'+sh(s.np,mtAll.np)+'</td><td>'+s.ns+'</td><td>'+sh(s.ns,mtAll.ns)+'</td></tr>';
+ }).join('');
+
  const a1=[...st].sort((a,b)=>b.np-a.np),a2=[...st].sort((a,b)=>b.ns-a.ns);
- mkc('c5',{type:'bar',data:{labels:a1.map(s=>s.n),datasets:[{label:'New POC',backgroundColor:PINK,data:a1.map(s=>s.np)}]},options:{...H,...NL}});
- mkc('c8',{type:'bar',data:{labels:a2.map(s=>s.n),datasets:SK.map(k=>({label:k[1],backgroundColor:k[2],data:a2.map(s=>s.G.reduce((a,r)=>a+r.mmk.filter(x=>x==k[0]).length,0))}))},options:HS});
+ mkc('c5',{type:'bar',data:{labels:a1.map(s=>s.n),datasets:[{label:'New POC',backgroundColor:PINK,data:a1.map(s=>s.np)}]},options:{...H,...NL, onClick: handleChartClick}});
+ mkc('c8',{type:'bar',data:{labels:a2.map(s=>s.n),datasets:SK.map(k=>({label:k[1],backgroundColor:k[2],data:a2.map(s=>s.G.reduce((a,r)=>a+r.mmk.filter(x=>x==k[0]).length,0))}))},options:{...HS, onClick: handleChartClick}});
+
  const L={};sc.filter(r=>r.np).forEach(r=>{const k=r.np+'|'+r.npa,x=L[k]=L[k]||{n:r.np,a:r.npa,nv:r.nv,d:r.d,q:0,s:new Set()};x.q+=tot(r);r.mmk.forEach(s=>x.s.add(s))});
  const lbl=k=>SK.find(s=>s[0]==k)[1],ll=Object.values(L).sort((a,b)=>a.d-b.d);
- $('np').innerHTML='<tr><th>Tên New POC</th><th>Địa chỉ</th><th>NV</th><th>Ngày</th><th>Mở mới SKU</th><th>Vol</th></tr>'+(ll.length?ll.map(x=>'<tr><td>'+esc(x.n)+'</td><td style="white-space:normal;text-align:left">'+esc(x.a)+'</td><td style="text-align:left">'+esc(x.nv)+'</td><td>'+dm(x.d)+'</td><td style="text-align:left">'+([...x.s].map(lbl).join(', ')||'–')+'</td><td>'+fm(x.q)+'</td></tr>').join(''):'<tr><td colspan=6>Chưa có New POC</td></tr>');
+ $('np').innerHTML='<tr><th>Tên New POC</th><th>Địa chỉ</th><th>NV</th><th>Ngày</th><th>Mở mới SKU</th><th>Vol</th></tr>'+(ll.length?ll.map(x=>{
+   const cls = 'sr-row' + (selectedSR===x.nv ? ' sr-active' : '');
+   return '<tr class="'+cls+'" onclick="toggleSR(\''+esc(x.nv)+'\')"><td>'+esc(x.n)+'</td><td style="white-space:normal;text-align:left">'+esc(x.a)+'</td><td style="text-align:left">'+esc(x.nv)+'</td><td>'+dm(x.d)+'</td><td style="text-align:left">'+([...x.s].map(lbl).join(', ')||'–')+'</td><td>'+fm(x.q)+'</td></tr>';
+ }).join(''):'<tr><td colspan=6>Chưa có New POC</td></tr>');
+
  const sf=(new Date(y,mo-1,1).getDay()+6)%7,nW=Math.floor((dim-1+sf)/7)+1,wi=d=>Math.floor((Math.min(Math.max(d.getDate()+(d.getMonth()+1<mo||d.getFullYear()<y?-99:0),1),dim)-1+sf)/7);
  const W=[...Array(nW)].map((_,i)=>{const a=Math.max(1,i*7-sf+1),b=Math.min(dim,i*7-sf+7);return{a,l:'Week '+(i+1)+' ('+a+(a==b?'':'-'+b)+'/'+mo+')',rows:[]}});
  sc.forEach(r=>W[r.d.getMonth()+1==mo&&r.d.getFullYear()==y?wi(r.d):(r.d<new Date(y,mo-1,1)?0:nW-1)].rows.push(r));
@@ -158,17 +237,42 @@ function draw(){const M=+$('fM').value,K=$('fK').value,y=Math.floor(M/100),mo=M%
  const WM=W.map(w=>met(w.rows)),oth=W.map((w,i)=>i).filter(i=>i!=cur&&started(W[i])),av=k=>oth.length?oth.reduce((a,i)=>a+WM[i][k],0)/oth.length:0;
  $('tw2').innerHTML='<tr><th>Week</th><th>Vol</th><th>'+D+'</th><th>New POC</th><th>New SKU</th></tr>'+W.map((w,i)=>'<tr class="'+(i==cur?'sel':'')+'"><td>'+w.l+'</td><td>'+fm(WM[i].vol)+'</td><td>'+WM[i].dis+'</td><td>'+WM[i].np+'</td><td>'+WM[i].ns+'</td></tr>').join('')+
  '<tr><td><b>TB các week còn lại</b></td>'+['vol','dis','np','ns'].map(k=>'<td><b>'+fm(av(k))+'</b> '+dl(WM[cur][k],av(k))+'</td>').join('')+'</tr>';
+ 
  $('t6').textContent=KL[K]+' theo Week · '+ml(M);
  mkc('c6',{type:'bar',data:{labels:W.map((w,i)=>'Week '+(i+1)),datasets:[{data:WM.map(m=>nf(m[K])),backgroundColor:WM.map((m,i)=>i==cur?GOLD:'#5a4a12')}]},options:NL});
- const MS=[...new Set(base.map(mk))].sort(),MG=grp(base,mk);$('t7').textContent=KL[K]+' theo Tháng';
+ 
+ const MS=[...new Set(base.map(mk))].sort(),MG=grp(base,mk);$('t7').textContent=KL[K]+' theo tháng';
  mkc('c7',{type:'bar',data:{labels:MS.map(ml),datasets:[{data:MS.map(m=>nf(met(MG[m])[K])),backgroundColor:MS.map(m=>m==M?GOLD:'#5a4a12')}]},options:NL});
+ 
  const q=R.Q;$('qa').innerHTML='<b style="color:var(--gold)">Chất lượng data</b><ul><li>'+q.n+' dòng</li><li class="'+(q.fut?'dn':'')+'">'+q.fut+' dòng có Ngày bán hàng sau hôm nay</li><li class="'+(q.bad.length?'dn':'')+'">'+q.bad.length+' dòng có cột Tháng/Năm khác Ngày bán hàng</li></ul>'+
- (q.bad.length?'<div class="sw"><table><tr><th>STT</th><th>NV bán hàng</th><th>Tên KH</th><th>Ngày bán</th><th>Tháng/Năm</th></tr>'+q.bad.map(r=>'<tr><td>'+r.stt+'</td><td style="text-align:left">'+esc(r.nv)+'</td><td style="text-align:left">'+esc(r.kh)+'</td><td>'+r.d.toLocaleDateString('vi-VN')+'</td><td>'+r.mo+'/'+r.yr+'</td></tr>').join('')+'</table></div>':'')}
-$('fM').onchange=()=>{buildTg();draw()};['fC','fK'].forEach(i=>$(i).onchange=draw);
+ (q.bad.length?'<div class="sw"><table><tr><th>STT</th><th>NV bán hàng</th><th>Tên KH</th><th>Ngày bán</th><th>Tháng/Năm</th></tr>'+q.bad.map(r=>'<tr><td>'+r.stt+'</td><td style="text-align:left">'+esc(r.nv)+'</td><td style="text-align:left">'+esc(r.kh)+'</td><td>'+r.d.toLocaleDateString('vi-VN')+'</td><td>'+r.mo+'/'+r.yr+'</td></tr>').join('')+'</table></div>':'')
+}
+
+$('btnClearSr').onclick = (e) => {
+  e.stopPropagation();
+  selectedSR = null;
+  draw();
+};
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('tr.sr-row') && 
+      !e.target.closest('canvas') && 
+      !e.target.closest('.sr-filter-banner') &&
+      !e.target.closest('header') &&
+      !e.target.closest('#set') &&
+      !e.target.closest('#qa') &&
+      !e.target.closest('.bar')) {
+    if (selectedSR !== null) {
+      selectedSR = null;
+      draw();
+    }
+  }
+});
+
+$('fM').onchange=()=>{buildTg();draw()};
+$('fC').onchange=draw;
 $('bSet').onclick=()=>{$('set').classList.toggle('show');$('bSet').classList.toggle('on')};$('bQa').onclick=()=>{$('qa').classList.toggle('show');$('bQa').classList.toggle('on')};
 $('bNew').onclick=()=>{$('f').value='';$('f').click()};$('drop').onclick=()=>$('f').click();$('f').onchange=e=>e.target.files[0]&&load(e.target.files[0]);
-document.addEventListener('dragover',e=>{e.preventDefault();$('drop').classList.add('on')});document.addEventListener('draggerave',()=>$('drop').classList.remove('on'));
+document.addEventListener('dragover',e=>{e.preventDefault();$('drop').classList.add('on')});document.addEventListener('dragleave',()=>$('drop').classList.remove('on'));
 document.addEventListener('drop',e=>{e.preventDefault();$('drop').classList.remove('on');e.dataTransfer.files[0]&&load(e.dataTransfer.files[0])});
-</script>
-</body>
-</html>
+</script></body></html>
