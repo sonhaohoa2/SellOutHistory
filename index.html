@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Dashboard Sell Out – Team SR</title>
+<title>Dashboard Sell Out – Team SON HAO HOA</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700;800&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -55,7 +55,6 @@ th:first-child,td:first-child{text-align:left}th{color:var(--gold);font-weight:7
     <div class="bar">
       <label>Tháng<select id="fM"></select></label>
       <label>Nhóm KH<select id="fC"></select></label>
-      <label>Chỉ số<select id="fK"><option value="vol">Vol</option><option value="dis">Dis 3+</option><option value="np">New POC</option><option value="ns">New SKU</option></select></label>
     </div>
     <h2 id="h0"></h2>
     <div class="kpis" id="kp"></div>
@@ -71,7 +70,7 @@ th:first-child,td:first-child{text-align:left}th{color:var(--gold);font-weight:7
       <div class="c"><h3>Vol theo SKU</h3><canvas id="c3"></canvas></div>
       <div class="c"><h3 id="t4"></h3><canvas id="c4"></canvas></div>
     </div>
-    <div class="c"><h3>Đóng góp của SR theo KPI</h3><div class="sw"><table id="tb"></table></div></div>
+    <div class="c"><h3>Đóng góp của SR</h3><div class="sw"><table id="tb"></table></div></div>
     <h2>New POC và New SKU</h2>
     <div class="g">
       <div class="c"><h3>New POC theo NV</h3><canvas id="c5"></canvas></div>
@@ -161,7 +160,7 @@ function draw(){const M=+$('fM').value,K=$('fK').value,y=Math.floor(M/100),mo=M%
  '<tr><td><b>TB các week còn lại</b></td>'+['vol','dis','np','ns'].map(k=>'<td><b>'+fm(av(k))+'</b> '+dl(WM[cur][k],av(k))+'</td>').join('')+'</tr>';
  $('t6').textContent=KL[K]+' theo Week · '+ml(M);
  mkc('c6',{type:'bar',data:{labels:W.map((w,i)=>'Week '+(i+1)),datasets:[{data:WM.map(m=>nf(m[K])),backgroundColor:WM.map((m,i)=>i==cur?GOLD:'#5a4a12')}]},options:NL});
- const MS=[...new Set(base.map(mk))].sort(),MG=grp(base,mk);$('t7').textContent=KL[K]+' theo tháng';
+ const MS=[...new Set(base.map(mk))].sort(),MG=grp(base,mk);$('t7').textContent=KL[K]+' theo Tháng';
  mkc('c7',{type:'bar',data:{labels:MS.map(ml),datasets:[{data:MS.map(m=>nf(met(MG[m])[K])),backgroundColor:MS.map(m=>m==M?GOLD:'#5a4a12')}]},options:NL});
  const q=R.Q;$('qa').innerHTML='<b style="color:var(--gold)">Chất lượng data</b><ul><li>'+q.n+' dòng</li><li class="'+(q.fut?'dn':'')+'">'+q.fut+' dòng có Ngày bán hàng sau hôm nay</li><li class="'+(q.bad.length?'dn':'')+'">'+q.bad.length+' dòng có cột Tháng/Năm khác Ngày bán hàng</li></ul>'+
  (q.bad.length?'<div class="sw"><table><tr><th>STT</th><th>NV bán hàng</th><th>Tên KH</th><th>Ngày bán</th><th>Tháng/Năm</th></tr>'+q.bad.map(r=>'<tr><td>'+r.stt+'</td><td style="text-align:left">'+esc(r.nv)+'</td><td style="text-align:left">'+esc(r.kh)+'</td><td>'+r.d.toLocaleDateString('vi-VN')+'</td><td>'+r.mo+'/'+r.yr+'</td></tr>').join('')+'</table></div>':'')}
