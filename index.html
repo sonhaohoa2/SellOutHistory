@@ -32,7 +32,19 @@ tr.sr-row{cursor:pointer;transition:background 0.2s}tr.sr-row:hover{background:r
 #set input{width:84px}.row{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin-top:8px}
 .sr-filter-banner{background:rgba(255,194,14,.15);border:1px solid var(--gold);padding:8px 14px;border-radius:8px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;color:var(--gold);font-weight:bold}
 .sr-filter-banner button{background:var(--gold);color:#000;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-weight:bold}
-</style></head><body>
+.bar{align-items:flex-end}.mapbtn{align-self:flex-end;display:flex;align-items:center;gap:7px;border:1.5px solid var(--gold);background:transparent;color:var(--gold);border-radius:999px;padding:7px 14px;font:700 13px inherit;cursor:pointer}.mapbtn svg{width:18px;height:18px;fill:currentColor;fill-opacity:.25;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}.mapbtn:hover{background:var(--gold);color:#000}
+#mapScr{display:none;position:fixed;inset:0;z-index:1000;background:var(--bg);flex-direction:column}
+.mTop{display:flex;gap:12px;align-items:center;padding:10px 16px;background:#000;border-bottom:3px solid var(--gold);flex-wrap:wrap}.mTop b{color:var(--gold);font-size:16px;text-transform:uppercase;display:flex;align-items:center;gap:8px}.mTop b svg{width:22px;height:22px;fill:var(--gold);fill-opacity:.3;stroke:var(--gold);stroke-width:1.8;stroke-linejoin:round}.mTop span{color:var(--mut);font-size:12px;flex:1}
+#mBody{flex:1;display:flex;min-height:0}#mPanel{width:300px;overflow-y:auto;padding:12px;background:var(--card);border-right:1px solid var(--line)}#mapC{flex:1;background:#222}
+.mi{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;border:1px solid transparent;font-size:13px}.mi:hover{background:rgba(255,194,14,.1)}.mi.act{border-color:var(--gold);background:rgba(255,194,14,.2)}.mi i{width:11px;height:11px;border-radius:50%;flex:none}.mi span{flex:1}.mi small{color:var(--mut)}
+.mh{color:var(--gold);font-size:12px;font-weight:700;text-transform:uppercase;margin:12px 0 4px}.mh:first-child{margin-top:0}
+@media(max-width:760px){#mBody{flex-direction:column}#mPanel{width:100%;max-height:36%}}
+#set button{background:transparent;color:var(--gold);border:1.5px solid var(--gold);border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer}#set button:hover{background:var(--gold);color:#000}
+#mNoBox{display:none;position:absolute;top:70px;left:50%;transform:translateX(-50%);width:min(900px,94vw);max-height:75vh;overflow:auto;z-index:1300;background:var(--card);border:1px solid var(--gold);border-radius:10px;padding:14px;box-shadow:0 10px 40px #000}#mNoBox button{background:var(--gold);color:#000;border:0;border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#161616;color:#f4efe3}
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script></head><body>
 <header><h1>Dashboard Sell Out – Team Nhà xong móng đang hoàn thiện<small id="sub">Kéo thả file Sell out history.xlsx vào để bắt đầu</small></h1>
 <button class="ib" id="bQa" title="Chất lượng data" aria-label="Chất lượng data"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 5-5"/></svg></button>
 <button class="ib" id="bSet" title="Cấu hình KPI" aria-label="Cấu hình KPI"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button>
@@ -42,14 +54,14 @@ tr.sr-row{cursor:pointer;transition:background 0.2s}tr.sr-row:hover{background:r
 <input type="file" id="f" accept=".xlsx,.xls,.csv" hidden>
 <div id="app" hidden>
 <div id="set"><b style="color:var(--gold)">Cấu hình KPI</b>
-<div class="row" id="fac"></div><div class="row"><label>Ngưỡng Dis<input type="number" id="thr" step="0.5"></label></div>
+<div class="row" id="fac"></div><div class="row"><label>Ngưỡng Dis<input type="number" id="thr" step="0.01"></label><button id="cfgSave">Lưu cấu hình ra file</button><button id="cfgLoad">Nạp cấu hình từ file</button><input type="file" id="cfgF" accept=".json" hidden></div>
 <h3 style="margin:14px 0 0;font-size:13px" id="tgh"></h3><div class="sw"><table id="tg" style="max-width:420px"></table></div></div>
 <div id="qa"></div>
 <div id="srBanner" class="sr-filter-banner" style="display:none">
   <span>Đang lọc dữ liệu theo SR: <span id="srSelectedName"></span></span>
   <button id="btnClearSr">Xem tất cả SR</button>
 </div>
-<div class="bar"><label>Tháng<select id="fM"></select></label><label>Nhóm KH<select id="fC"></select></label></div>
+<div class="bar"><label>Tháng<select id="fM"></select></label><label>Nhóm KH<select id="fC"></select></label><button class="mapbtn" id="bMap" title="Tiềm năng địa bàn"><svg viewBox="0 0 24 24"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5z"/><path d="M5 22h14"/></svg>Tiềm năng địa bàn</button></div>
 <h2 id="h0"></h2><div class="kpis" id="kp"></div>
 <h2>Tiến độ Target</h2><div class="c"><div class="sw"><table id="tp"></table></div></div>
 <h2>STR (Vol) và Dis 3+ theo NV bán hàng</h2>
@@ -67,10 +79,13 @@ tr.sr-row{cursor:pointer;transition:background 0.2s}tr.sr-row:hover{background:r
 <script>
 const SK=[['BUD330','Bud 330','#e0182d'],['BUD250','Bud 250','#ff7a8a'],['BUD ZERO 0.0','Bud Zero','#8f1020'],['ULTRA330','Ultra 330','#3d8bff'],['ULTRA250','Ultra 250','#9cc4ff'],['CO250','Corona 250','#f2b705']];
 const RED='#e0182d',ULT='#3d8bff',PINK='#f08fb0',COR='#f2b705',GOLD='#ffc20e';
-let R=[],ST={thr:3,fac:Object.fromEntries(SK.map(s=>[s[0],1])),tg:{}},CH={};
+let R=[],ST={thr:3,fac:Object.fromEntries(SK.map(s=>[s[0],/250/.test(s[0])?0.76:1])),tg:{}},CH={};
 let selectedSR = null;
 
-try{Object.assign(ST,JSON.parse(localStorage.getItem('sr_cfg3')||'{}'))}catch(e){}
+const SKEY='sr_kpi',EXCL=[],NOKPI=['SƠN HÀO HOA'],ORDER=['NGUYỄN QUANG THIỀU','TRẦN ĐĂNG TIẾN','NGUYỄN XUÂN ĐỨC','ĐỖ ĐÌNH BẢO','TRẦN ĐĂNG PHƯƠNG','NGUYỄN VĂN ĐẠT','NGUYỄN HỮU VINH','LÊ VĂN LÂM'];
+const oi=n=>{const i=ORDER.indexOf(n);return i<0?99:i},srSort=(a,b)=>oi(a)-oi(b)||a.localeCompare(b,'vi'),srNames=()=>[...new Set([...ORDER,...R.map(r=>r.nv)])].sort(srSort);
+try{let j=localStorage.getItem(SKEY),o=j?JSON.parse(j):null;if(!o)for(const k of ['sr_cfg3','sr_cfg2']){const x=JSON.parse(localStorage.getItem(k)||'null');if(x){o={thr:x.thr,tg:x.tg};break}}
+ if(o){if(o.thr!=null)ST.thr=o.thr;if(o.tg)ST.tg=o.tg;if(o.fac)Object.assign(ST.fac,o.fac)}}catch(e){}
 Chart.defaults.color='#cfc8b6';Chart.defaults.borderColor='rgba(255,255,255,.08)';Chart.defaults.font.family="'Be Vietnam Pro',system-ui,sans-serif";
 const $=i=>document.getElementById(i),nf=n=>Math.round(n*10)/10,fm=n=>nf(n).toLocaleString('vi-VN'),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const num=v=>+v||0,mk=r=>r.yr*100+r.mo,ml=k=>'T'+(k%100)+'/'+Math.floor(k/100),dm=d=>d.getDate()+'/'+(d.getMonth()+1);
@@ -82,27 +97,34 @@ function load(file){const rd=new FileReader();rd.onload=e=>{const wb=XLSX.read(e
 function parse(rows,name){const today=new Date(),bad=[],mc=Object.keys(rows[0]||{}).filter(k=>k.startsWith('Mở mới'));let fut=0;
  R=rows.map(o=>{const d=toD(o['Ngày bán hàng']);if(!d)return null;
   const mmk=[];mc.forEach(k=>{if(num(o[k])>0){const s=SK.find(s=>k.toUpperCase().includes(s[0]));if(s)mmk.push(s[0])}});
-  const r={stt:o['STT'],kh:o['Tên KH'],nv:String(o['NV bán hàng']).trim().toUpperCase(),cls:o['Phân loại KH']||'?',d,yr:num(o['Năm'])||d.getFullYear(),mo:num(o['Tháng'])||d.getMonth()+1,
-  poc:o['Mã KH']||o['Tên KH'],np:String(o['New poc']).trim(),npa:String(o['Địa chỉ new poc']).trim(),
+  const r={stt:o['STT'],kh:o['Tên KH'],nv:String(o['NV bán hàng']).trim().toUpperCase().normalize('NFC'),cls:o['Phân loại KH']||'?',d,yr:num(o['Năm'])||d.getFullYear(),mo:num(o['Tháng'])||d.getMonth()+1,
+  ma:String(o['Mã KH']||'').trim(),poc:o['Mã KH']||o['Tên KH'],addr:String(o['Địa Chỉ']||'').trim(),np:String(o['New poc']).trim(),npa:String(o['Địa chỉ new poc']).trim(),
   sku:Object.fromEntries(SK.map(s=>[s[0],num(o[s[0]])])),mmk,mm:mmk.length};
-  if(d>today)fut++;if(d.getMonth()+1!==r.mo||d.getFullYear()!==r.yr)bad.push(r);return r}).filter(Boolean);
+  if(d>today)fut++;if(d.getMonth()+1!==r.mo||d.getFullYear()!==r.yr)bad.push(r);return r}).filter(r=>r&&!EXCL.includes(r.nv));
  R.Q={bad,fut,n:R.length};$('drop').hidden=true;$('app').hidden=false;
  $('sub').textContent=name+' · '+R.length+' dòng · Sales Sup: '+(rows[0]['Tên M2']||'');init()}
 const nat=(r,k)=>r.sku[k]*(+ST.fac[k]||0),tot=r=>SK.reduce((a,s)=>a+nat(r,s[0]),0);
-function disN(rs,f){const m={};rs.forEach(r=>{m[r.poc]=(m[r.poc]||0)+f(r)});return Object.values(m).filter(v=>v>=ST.thr).length}
+function disN(rs,f){const m={},n={};rs.forEach(r=>{const v=f(r);if(r.ma)m[r.ma]=(m[r.ma]||0)+v;else if(r.np){const k=r.np+'|'+r.npa;n[k]=(n[k]||0)+v}});
+ return Object.values(m).filter(v=>v>=ST.thr-1e-9).length+Object.values(n).filter(v=>v>0).length}
 function met(rs){const np=new Set();rs.forEach(r=>{if(r.np)np.add(r.np+'|'+r.npa)});return{vol:rs.reduce((a,r)=>a+tot(r),0),dis:disN(rs,tot),np:np.size,ns:rs.reduce((a,r)=>a+r.mm,0)}}
 const grp=(rs,f)=>{const o={};rs.forEach(r=>{(o[f(r)]=o[f(r)]||[]).push(r)});return o};
 const dl=(a,b)=>{if(!b)return '';const p=(a-b)/b*100;return '<span class="'+(p>=0?'up':'dn')+'">'+(p>=0?'▲ ':'▼ ')+Math.abs(Math.round(p))+'%</span>'};
 function init(){const ms=[...new Set(R.map(mk))].sort(),t=new Date(),tk=t.getFullYear()*100+t.getMonth()+1;
  $('fM').innerHTML=ms.map(k=>'<option value="'+k+'">'+ml(k)+'</option>').join('');$('fM').value=ms.includes(tk)?tk:ms[ms.length-1];
  $('fC').innerHTML='<option value="all">Tất cả nhóm</option>'+[...new Set(R.map(r=>r.cls))].map(c=>'<option>'+esc(c)+'</option>').join('');
- $('fac').innerHTML=SK.map(s=>'<label>Hệ số '+s[0]+'<input type="number" step="0.01" data-s="'+s[0]+'" value="'+ST.fac[s[0]]+'"></label>').join('');$('thr').value=ST.thr;
- document.querySelectorAll('#fac input').forEach(i=>i.onchange=()=>{ST.fac[i.dataset.s]=+i.value;save()});$('thr').onchange=()=>{ST.thr=+$('thr').value;save()};
+ cfgUI();
  buildTg();draw()}
 function buildTg(){const M=$('fM').value,T=ST.tg[M]||{};$('tgh').textContent='Target '+ml(+M);
- $('tg').innerHTML='<tr><th>NV bán hàng</th><th>Vol</th><th>Dis</th></tr>'+[...new Set(R.map(r=>r.nv))].sort().map(n=>'<tr><td>'+esc(n)+'</td><td><input type="number" data-n="'+esc(n)+'" data-k="vol" value="'+((T[n]||{}).vol||'')+'"></td><td><input type="number" data-n="'+esc(n)+'" data-k="dis" value="'+((T[n]||{}).dis||'')+'"></td></tr>').join('');
+ $('tg').innerHTML='<tr><th>NV bán hàng</th><th>Vol</th><th>Dis</th></tr>'+srNames().filter(n=>!NOKPI.includes(n)).map(n=>'<tr><td>'+esc(n)+'</td><td><input type="number" data-n="'+esc(n)+'" data-k="vol" value="'+((T[n]||{}).vol||'')+'"></td><td><input type="number" data-n="'+esc(n)+'" data-k="dis" value="'+((T[n]||{}).dis||'')+'"></td></tr>').join('');
  document.querySelectorAll('#tg input').forEach(i=>i.onchange=()=>{const t=ST.tg[M]=ST.tg[M]||{};(t[i.dataset.n]=t[i.dataset.n]||{})[i.dataset.k]=+i.value;save()})}
-function save(){try{localStorage.setItem('sr_cfg3',JSON.stringify(ST))}catch(e){}draw()}
+const snap=()=>({v:2,thr:ST.thr,fac:ST.fac,tg:ST.tg});
+function persist(){try{localStorage.setItem(SKEY,JSON.stringify(snap()))}catch(e){}}
+function save(){persist();draw()}
+function cfgUI(){$('fac').innerHTML=SK.map(s=>'<label>Hệ số '+s[0]+'<input type="number" step="0.01" data-s="'+s[0]+'" value="'+ST.fac[s[0]]+'"></label>').join('');$('thr').value=ST.thr;
+ document.querySelectorAll('#fac input').forEach(i=>i.onchange=()=>{ST.fac[i.dataset.s]=+i.value;save()});$('thr').onchange=()=>{ST.thr=+$('thr').value;save()}}
+$('cfgSave').onclick=()=>{persist();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(snap(),null,1)],{type:'application/json'}));a.download='cau-hinh-kpi.json';a.click()};
+$('cfgLoad').onclick=()=>$('cfgF').click();
+$('cfgF').onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const o=JSON.parse(rd.result);if(o.thr!=null)ST.thr=o.thr;if(o.fac)Object.assign(ST.fac,o.fac);if(o.tg)ST.tg=o.tg;persist();cfgUI();if(R.length){buildTg();draw()}}catch(x){alert('File cấu hình không hợp lệ')}};rd.readAsText(f);e.target.value=''}
 function mkc(id,cfg){if(CH[id])CH[id].destroy();cfg.options=Object.assign({responsive:true,maintainAspectRatio:true},cfg.options);CH[id]=new Chart($(id),cfg)}
 const H={indexAxis:'y',aspectRatio:1.5},HS={indexAxis:'y',aspectRatio:1.5,scales:{x:{stacked:true},y:{stacked:true}}},NL={plugins:{legend:{display:false}}};
 
@@ -275,4 +297,68 @@ $('bSet').onclick=()=>{$('set').classList.toggle('show');$('bSet').classList.tog
 $('bNew').onclick=()=>{$('f').value='';$('f').click()};$('drop').onclick=()=>$('f').click();$('f').onchange=e=>e.target.files[0]&&load(e.target.files[0]);
 document.addEventListener('dragover',e=>{e.preventDefault();$('drop').classList.add('on')});document.addEventListener('dragleave',()=>$('drop').classList.remove('on'));
 document.addEventListener('drop',e=>{e.preventDefault();$('drop').classList.remove('on');e.dataTransfer.files[0]&&load(e.dataTransfer.files[0])});
-</script></body></html>
+</script>
+<div id="mapScr"><div class="mTop"><b><svg viewBox="0 0 24 24"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5z"/><path d="M5 22h14"/></svg>Tiềm năng địa bàn</b>
+<select id="mMon"></select><span id="mSt"></span><button class="btn" id="mX" style="background:var(--gold);color:#000;border:0;border-radius:6px;padding:7px 14px;font-weight:700;cursor:pointer">Đóng</button></div>
+<div id="mBody"><div id="mPanel"></div><div id="mapC"></div></div><div id="mNoBox"></div></div>
+<script>
+(function(){
+const PAL=['#ffc20e','#3d8bff','#e0182d','#37d67a','#f08fb0','#ff8a3d','#b78cff','#2fd3d3','#c7e03a','#ff6fb5','#9aa0a6'],g=id=>document.getElementById(id),sleep=t=>new Promise(r=>setTimeout(r,t));
+const FAST=true;let map,layer,GEO={},S=null,K=null,busy=false,fails=0,cnt=0;
+try{GEO=JSON.parse(localStorage.getItem('geo_v1')||'{}')}catch(e){}
+if(!GEO.__v3){Object.keys(GEO).forEach(k=>{if(GEO[k]===0)delete GEO[k]});GEO.__v3=1;try{localStorage.setItem('geo_v1',JSON.stringify(GEO))}catch(e){}}
+const sv=()=>{try{localStorage.setItem('geo_v1',JSON.stringify(GEO))}catch(e){}},ad=r=>r.addr||r.npa||'';
+function rows(){const M=g('mMon').value,c=$('fC').value;return R.filter(r=>(c=='all'||r.cls==c)&&(M=='all'||mk(r)==+M)&&ad(r))}
+const PA={'hải dương':'Hải Phòng','bắc giang':'Bắc Ninh','hà nam':'Ninh Bình','nam định':'Ninh Bình','thái bình':'Hưng Yên','vĩnh phúc':'Phú Thọ','hòa bình':'Phú Thọ','bắc kạn':'Thái Nguyên','hà giang':'Tuyên Quang','yên bái':'Lào Cai'},
+ clp=t=>t.replace(/^(thành phố|tỉnh|tp\.?)\s+/i,'').trim(),isN=x=>/^\d+[a-zA-Z]?([\/-]\d+)*$/.test(x);
+function queries(a){const T=[];a.split(',').forEach(x=>{x=x.trim().replace(/(\d)\s*([\/-])\s*(\d)/g,'$1$2$3');if(x&&!/^[.\-]+$/.test(x)&&!/^việt nam$/i.test(x)&&!T.some(y=>y.toLowerCase()==x.toLowerCase()))T.push(x)});
+ const wi=T.findIndex(x=>/^(phường|xã|thị trấn)\s/i.test(x)),W=wi>=0?T[wi]:'',rest=wi>=0?T.slice(wi+1):T.slice(-1),P=clp(rest.length?rest[rest.length-1]:''),D=rest.slice(0,-1).join(', '),
+ det=(wi>=0?T.slice(0,wi):T.slice(0,-1)).filter(x=>!/^(tỉnh|thành phố|tp\.?)\s/i.test(x));
+ let st='',hn='';for(let i=det.length-1;i>=0;i--){const x=det[i];if(!isN(x)){const m=/^(\d+[a-zA-Z]?(?:[\/-]\d+)*)\s+(.+)$/.exec(x);if(m){hn=m[1];st=m[2]}else{st=x;if(i&&isN(det[i-1]))hn=det[i-1]}break}}
+ const j=(...q)=>q.filter(Boolean).join(', ')+', Việt Nam',PL=PA[P.toLowerCase()]||'',V=[],add=(q,l)=>{if(!V.some(v=>v[0]==q))V.push([q,l])};
+ if(st){if(!FAST&&hn)add(j(hn+' '+st,W,D,P),1);add(j(st,W,D,P),2);if(PL)add(j(st,W,D,PL),2);if(W||D)add(j(st,D,P),2);add(j(st,P),2)}
+ if(W){add(j(W,D,P),3);if(PL)add(j(W,D,PL),3)}if(D)add(j(D,P),4);if(!V.length)add(j(T.join(', ')),3);return V}
+async function geo1(a){for(const[q,lv]of queries(a)){const k='q:'+q;let r=GEO[k];if(r===undefined){const res=await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=3&countrycodes=vn&viewbox=104.4,22.7,108.2,19.5&q='+encodeURIComponent(q));if(!res.ok)throw new Error(res.status);const j=await res.json();await sleep(1100);const x=j.find(y=>+y.lat>19.5&&+y.lat<22.7&&+y.lon>104.4&&+y.lon<108.2);r=GEO[k]=x?[+x.lat,+x.lon]:0}if(r)return[r[0],r[1],lv]}return 0}
+function jit(a,lv,ll){if(lv<3)return ll;let h=0;for(const c of a)h=(h*31+c.charCodeAt(0))|0;const k=lv==4?.04:.006;return[ll[0]+((h%1000)/1000)*k,ll[1]+(((h>>10)%1000)/1000)*k]}
+function status(m){const all=[...new Set(R.map(ad).filter(Boolean))],ok=all.filter(a=>GEO[a]).length,no=all.filter(a=>GEO[a]===0).length;g('mSt').innerHTML=m||(ok+no<all.length?'Đang xử lý ('+(ok+no)+'/'+all.length+')…':'Đã định vị '+ok+'/'+all.length+' địa chỉ')+(no?' · <a id="mNo" style="color:var(--gold);cursor:pointer;text-decoration:underline">'+no+' chưa tìm thấy</a>':'')}
+async function run(){if(busy)return;busy=true;
+ while(true){const todo=[...new Set(R.map(ad).filter(a=>a&&!(a in GEO)))];if(!todo.length)break;const cur=new Set(rows().map(ad)),a=todo.find(x=>cur.has(x))||todo[0];
+  try{GEO[a]=await geo1(a);fails=0}catch(e){if(++fails>=3){status('Không kết nối được dịch vụ định vị (mạng hoặc bị chặn), mở lại màn hình này để thử tiếp');break}await sleep(3000);continue}
+  if(++cnt%6==0){sv();render()}else status()}
+ sv();busy=false;if(!fails)status();render()}
+const col=n=>PAL[[...new Set(R.map(r=>r.nv))].sort().indexOf(n)%PAL.length],lb=k=>SK.find(s=>s[0]==k)[1],vol=r=>K?nat(r,K):tot(r);
+function render(fit){if(!map||g('mapScr').style.display!='flex')return;
+ const all=rows(),srs={},sks={},P={};
+ all.forEach(r=>{if(vol(r)>0){const x=srs[r.nv]=srs[r.nv]||{v:0,p:new Set()};x.v+=vol(r);x.p.add(ad(r))}
+  if(!S||r.nv==S)SK.forEach(k=>{const v=nat(r,k[0]);if(v>0){const x=sks[k[0]]=sks[k[0]]||{v:0,p:new Set()};x.v+=v;x.p.add(ad(r))}});
+  if((!S||r.nv==S)&&vol(r)>0){const a=ad(r),x=P[a]=P[a]||{a,n:r.kh||r.np,nv:new Set(),v:0,sk:{}};x.nv.add(r.nv);x.v+=vol(r);SK.forEach(k=>x.sk[k[0]]=(x.sk[k[0]]||0)+nat(r,k[0]))}});
+ const pts=Object.values(P),loc=pts.filter(p=>GEO[p.a]),mx=Math.max(1,...loc.map(p=>p.v));
+ const it=(t,v,c,s,a)=>'<div class="mi'+(a?' act':'')+'" data-t="'+t+'" data-v="'+esc(v)+'"><i style="background:'+c+'"></i><span>'+esc(s[0])+'</span><small>'+s[1]+'</small></div>';
+ g('mPanel').innerHTML='<div class="mh">Sales Rep</div>'+it('sr','','#fff',['Tất cả SR',fm(pts.reduce((a,p)=>a+p.v,0))],!S)+Object.keys(srs).sort(srSort).map(n=>it('sr',n,col(n),[n,fm(srs[n].v)+' · '+srs[n].p.size+' POC'],S==n)).join('')+
+ '<div class="mh">SKU</div>'+it('sku','','#fff',['Tất cả SKU',''],!K)+SK.filter(k=>sks[k[0]]).map(k=>it('sku',k[0],k[2],[k[1],fm(sks[k[0]].v)+' · '+sks[k[0]].p.size+' POC'],K==k[0])).join('')+
+ '<div class="mh">Hiển thị</div><div style="font-size:12px;color:var(--mut)">'+loc.length+'/'+pts.length+' POC đã lên bản đồ. Kích thước chấm theo Vol'+(K?' '+lb(K):'')+'.</div>';
+ layer.clearLayers();const bs=[];
+ loc.sort((a,b)=>b.v-a.v).forEach(p=>{const G=GEO[p.a],ll=jit(p.a,G[2],G),sr=[...p.nv],c=K?SK.find(k=>k[0]==K)[2]:col(sr[0]);bs.push(ll);
+  L.circleMarker(ll,{radius:5+17*Math.sqrt(p.v/mx),color:'#000',weight:1,fillColor:c,fillOpacity:.78}).addTo(layer).bindPopup('<b>'+esc(p.n)+'</b><br>'+esc(p.a)+'<br>SR: '+esc(sr.join(', '))+'<br>Vol: <b>'+fm(p.v)+'</b><br>'+SK.filter(k=>p.sk[k[0]]>0).map(k=>lb(k[0])+' '+fm(p.sk[k[0]])).join(' · ')+'<br><i style="color:#a79f8d">Vị trí theo '+['','số nhà','đường','phường/xã','quận/huyện'][G[2]]+'</i>')});
+ if(fit&&bs.length)map.fitBounds(bs,{padding:[40,40],maxZoom:16})}
+function open_(){g('mapScr').style.display='flex';const cur=$('fM').value;
+ g('mMon').innerHTML='<option value="all">Tất cả tháng</option>'+[...new Set(R.map(mk))].sort().map(k=>'<option value="'+k+'">'+ml(k)+'</option>').join('');g('mMon').value=cur;S=(typeof selectedSR!='undefined'&&selectedSR)||null;K=null;
+ if(!map){map=L.map('mapC',{preferCanvas:true}).setView([21.03,105.83],11);const B=[['Đường phố',L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Tiles © Esri'})],['OSM Pháp',L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',{subdomains:'abc',maxZoom:20,attribution:'© OpenStreetMap contributors'})],['Vệ tinh',L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Tiles © Esri'})]];
+ let bi=0,er=0;B[0][1].addTo(map);L.control.layers(Object.fromEntries(B),null,{position:'topright'}).addTo(map);
+ map.on('baselayerchange',e=>{bi=B.findIndex(b=>b[1]==e.layer);er=0});
+ B.forEach((b,i)=>b[1].on('tileerror',()=>{if(i==bi&&bi==0&&++er==6){map.removeLayer(B[0][1]);B[1][1].addTo(map);er=0}}));
+ layer=L.layerGroup().addTo(map)}
+ status();setTimeout(()=>{map.invalidateSize();render(true);run()},60)}
+function showNo(){const A={};R.forEach(r=>{const a=ad(r);if(a&&GEO[a]===0){const x=A[a]=A[a]||{a,n:new Set(),s:new Set()};x.n.add(r.kh||r.np);x.s.add(r.nv)}});
+ const L=Object.values(A).map(x=>({a:x.a,n:[...x.n].join('; '),s:[...x.s].join(', ')})),b=g('mNoBox');
+ b.innerHTML='<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px"><b style="color:var(--gold);flex:1">Địa chỉ chưa tìm thấy ('+L.length+')</b><button id="nCp">Sao chép</button><button id="nRt">Tra lại</button><button id="nX">Đóng</button></div><table><tr><th>Tên POC</th><th>SR</th><th>Địa chỉ</th></tr>'+L.map(x=>'<tr><td style="white-space:normal;text-align:left">'+esc(x.n)+'</td><td style="text-align:left">'+esc(x.s)+'</td><td style="white-space:normal;text-align:left">'+esc(x.a)+'</td></tr>').join('')+'</table>';
+ b.style.display='block';g('nX').onclick=()=>b.style.display='none';
+ g('nCp').onclick=()=>{const t='Tên POC\tSR\tĐịa chỉ\n'+L.map(x=>[x.n,x.s,x.a].join('\t')).join('\n');(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).catch(()=>{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove()});g('nCp').textContent='Đã sao chép'};
+ g('nRt').onclick=()=>{Object.keys(GEO).forEach(k=>{if(GEO[k]===0)delete GEO[k]});sv();b.style.display='none';run()}}
+g('mSt').onclick=e=>{if(e.target.id=='mNo')showNo()};
+g('bMap').onclick=open_;g('mX').onclick=()=>g('mapScr').style.display='none';document.addEventListener('keydown',e=>{if(e.key=='Escape')g('mapScr').style.display='none'});
+g('mMon').onchange=()=>render(true);
+g('mPanel').onclick=e=>{const m=e.target.closest('.mi');if(!m)return;const v=m.dataset.v||null;if(m.dataset.t=='sr')S=S==v?null:v;else K=K==v?null:v;render(true)};
+})();
+</script>
+</body></html>
