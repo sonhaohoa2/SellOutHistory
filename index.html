@@ -54,7 +54,7 @@ tr.sr-row{cursor:pointer;transition:background 0.2s}tr.sr-row:hover{background:r
 <input type="file" id="f" accept=".xlsx,.xls,.csv" hidden>
 <div id="app" hidden>
 <div id="set"><b style="color:var(--gold)">Cấu hình KPI</b>
-<div class="row" id="fac"></div><div class="row"><label>Ngưỡng Dis<input type="number" id="thr" step="0.01"></label><button id="cfgSave">Lưu cấu hình ra file</button><button id="cfgLoad">Nạp cấu hình từ file</button><input type="file" id="cfgF" accept=".json" hidden></div>
+<div class="row" id="fac"></div><div class="row" id="facD"></div><div class="row"><label>Ngưỡng Dis<input type="number" id="thr" step="0.01"></label><button id="cfgSave">Lưu cấu hình ra file</button><button id="cfgLoad">Nạp cấu hình từ file</button><input type="file" id="cfgF" accept=".json" hidden></div>
 <h3 style="margin:14px 0 0;font-size:13px" id="tgh"></h3><div class="sw"><table id="tg" style="max-width:420px"></table></div></div>
 <div id="qa"></div>
 <div id="srBanner" class="sr-filter-banner" style="display:none">
@@ -79,13 +79,13 @@ tr.sr-row{cursor:pointer;transition:background 0.2s}tr.sr-row:hover{background:r
 <script>
 const SK=[['BUD330','Bud 330','#e0182d'],['BUD250','Bud 250','#ff7a8a'],['BUD ZERO 0.0','Bud Zero','#8f1020'],['ULTRA330','Ultra 330','#3d8bff'],['ULTRA250','Ultra 250','#9cc4ff'],['CO250','Corona 250','#f2b705']];
 const RED='#e0182d',ULT='#3d8bff',PINK='#f08fb0',COR='#f2b705',GOLD='#ffc20e';
-let R=[],ST={thr:3,fac:Object.fromEntries(SK.map(s=>[s[0],/250/.test(s[0])?0.76:1])),tg:{}},CH={};
+let R=[],ST={thr:3,fac:Object.fromEntries(SK.map(s=>[s[0],/250/.test(s[0])?0.76:1])),tg:{},dfac:Object.fromEntries(SK.map(s=>[s[0],1]))},CH={};
 let selectedSR = null;
 
 const SKEY='sr_kpi',EXCL=[],NOKPI=['SƠN HÀO HOA'],ORDER=['NGUYỄN QUANG THIỀU','TRẦN ĐĂNG TIẾN','NGUYỄN XUÂN ĐỨC','ĐỖ ĐÌNH BẢO','TRẦN ĐĂNG PHƯƠNG','NGUYỄN VĂN ĐẠT','NGUYỄN HỮU VINH','LÊ VĂN LÂM'];
 const oi=n=>{const i=ORDER.indexOf(n);return i<0?99:i},srSort=(a,b)=>oi(a)-oi(b)||a.localeCompare(b,'vi'),srNames=()=>[...new Set([...ORDER,...R.map(r=>r.nv)])].sort(srSort);
 try{let j=localStorage.getItem(SKEY),o=j?JSON.parse(j):null;if(!o)for(const k of ['sr_cfg3','sr_cfg2']){const x=JSON.parse(localStorage.getItem(k)||'null');if(x){o={thr:x.thr,tg:x.tg};break}}
- if(o){if(o.thr!=null)ST.thr=o.thr;if(o.tg)ST.tg=o.tg;if(o.fac)Object.assign(ST.fac,o.fac)}}catch(e){}
+ if(o){if(o.thr!=null)ST.thr=o.thr;if(o.tg)ST.tg=o.tg;if(o.fac)Object.assign(ST.fac,o.fac);if(o.dfac)Object.assign(ST.dfac,o.dfac)}}catch(e){}
 Chart.defaults.color='#cfc8b6';Chart.defaults.borderColor='rgba(255,255,255,.08)';Chart.defaults.font.family="'Be Vietnam Pro',system-ui,sans-serif";
 const $=i=>document.getElementById(i),nf=n=>Math.round(n*10)/10,fm=n=>nf(n).toLocaleString('vi-VN'),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const num=v=>+v||0,mk=r=>r.yr*100+r.mo,ml=k=>'T'+(k%100)+'/'+Math.floor(k/100),dm=d=>d.getDate()+'/'+(d.getMonth()+1);
@@ -103,10 +103,10 @@ function parse(rows,name){const today=new Date(),bad=[],mc=Object.keys(rows[0]||
   if(d>today)fut++;if(d.getMonth()+1!==r.mo||d.getFullYear()!==r.yr)bad.push(r);return r}).filter(r=>r&&!EXCL.includes(r.nv));
  R.Q={bad,fut,n:R.length};$('drop').hidden=true;$('app').hidden=false;
  $('sub').textContent=name+' · '+R.length+' dòng · Sales Sup: '+(rows[0]['Tên M2']||'');init()}
-const nat=(r,k)=>r.sku[k]*(+ST.fac[k]||0),tot=r=>SK.reduce((a,s)=>a+nat(r,s[0]),0);
+const nat=(r,k)=>r.sku[k]*(+ST.fac[k]||0),tot=r=>SK.reduce((a,s)=>a+nat(r,s[0]),0),natD=(r,k)=>r.sku[k]*(+ST.dfac[k]||0),totD=r=>SK.reduce((a,s)=>a+natD(r,s[0]),0);
 function disN(rs,f){const m={},n={};rs.forEach(r=>{const v=f(r);if(r.ma)m[r.ma]=(m[r.ma]||0)+v;else if(r.np){const k=r.np+'|'+r.npa;n[k]=(n[k]||0)+v}});
  return Object.values(m).filter(v=>v>=ST.thr-1e-9).length+Object.values(n).filter(v=>v>0).length}
-function met(rs){const np=new Set();rs.forEach(r=>{if(r.np)np.add(r.np+'|'+r.npa)});return{vol:rs.reduce((a,r)=>a+tot(r),0),dis:disN(rs,tot),np:np.size,ns:rs.reduce((a,r)=>a+r.mm,0)}}
+function met(rs){const np=new Set();rs.forEach(r=>{if(r.np)np.add(r.np+'|'+r.npa)});return{vol:rs.reduce((a,r)=>a+tot(r),0),dis:disN(rs,totD),np:np.size,ns:rs.reduce((a,r)=>a+r.mm,0)}}
 const grp=(rs,f)=>{const o={};rs.forEach(r=>{(o[f(r)]=o[f(r)]||[]).push(r)});return o};
 const dl=(a,b)=>{if(!b)return '';const p=(a-b)/b*100;return '<span class="'+(p>=0?'up':'dn')+'">'+(p>=0?'▲ ':'▼ ')+Math.abs(Math.round(p))+'%</span>'};
 function init(){const ms=[...new Set(R.map(mk))].sort(),t=new Date(),tk=t.getFullYear()*100+t.getMonth()+1;
@@ -117,14 +117,14 @@ function init(){const ms=[...new Set(R.map(mk))].sort(),t=new Date(),tk=t.getFul
 function buildTg(){const M=$('fM').value,T=ST.tg[M]||{};$('tgh').textContent='Target '+ml(+M);
  $('tg').innerHTML='<tr><th>NV bán hàng</th><th>Vol</th><th>Dis</th></tr>'+srNames().filter(n=>!NOKPI.includes(n)).map(n=>'<tr><td>'+esc(n)+'</td><td><input type="number" data-n="'+esc(n)+'" data-k="vol" value="'+((T[n]||{}).vol||'')+'"></td><td><input type="number" data-n="'+esc(n)+'" data-k="dis" value="'+((T[n]||{}).dis||'')+'"></td></tr>').join('');
  document.querySelectorAll('#tg input').forEach(i=>i.onchange=()=>{const t=ST.tg[M]=ST.tg[M]||{};(t[i.dataset.n]=t[i.dataset.n]||{})[i.dataset.k]=+i.value;save()})}
-const snap=()=>({v:2,thr:ST.thr,fac:ST.fac,tg:ST.tg});
+const snap=()=>({v:3,thr:ST.thr,fac:ST.fac,dfac:ST.dfac,tg:ST.tg});
 function persist(){try{localStorage.setItem(SKEY,JSON.stringify(snap()))}catch(e){}}
 function save(){persist();draw()}
-function cfgUI(){$('fac').innerHTML=SK.map(s=>'<label>Hệ số '+s[0]+'<input type="number" step="0.01" data-s="'+s[0]+'" value="'+ST.fac[s[0]]+'"></label>').join('');$('thr').value=ST.thr;
- document.querySelectorAll('#fac input').forEach(i=>i.onchange=()=>{ST.fac[i.dataset.s]=+i.value;save()});$('thr').onchange=()=>{ST.thr=+$('thr').value;save()}}
+function cfgUI(){$('fac').innerHTML=SK.map(s=>'<label>Hệ số Vol '+s[0]+'<input type="number" step="0.01" data-s="'+s[0]+'" value="'+ST.fac[s[0]]+'"></label>').join('');$('thr').value=ST.thr;$('facD').innerHTML=SK.map(s=>'<label>Hệ số Dis '+s[0]+'<input type="number" step="0.01" data-d="'+s[0]+'" value="'+ST.dfac[s[0]]+'"></label>').join('');
+ document.querySelectorAll('#fac input,#facD input').forEach(i=>i.onchange=()=>{if(i.dataset.s)ST.fac[i.dataset.s]=+i.value;else ST.dfac[i.dataset.d]=+i.value;save()});$('thr').onchange=()=>{ST.thr=+$('thr').value;save()}}
 $('cfgSave').onclick=()=>{persist();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(snap(),null,1)],{type:'application/json'}));a.download='cau-hinh-kpi.json';a.click()};
 $('cfgLoad').onclick=()=>$('cfgF').click();
-$('cfgF').onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const o=JSON.parse(rd.result);if(o.thr!=null)ST.thr=o.thr;if(o.fac)Object.assign(ST.fac,o.fac);if(o.tg)ST.tg=o.tg;persist();cfgUI();if(R.length){buildTg();draw()}}catch(x){alert('File cấu hình không hợp lệ')}};rd.readAsText(f);e.target.value=''}
+$('cfgF').onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const o=JSON.parse(rd.result);if(o.thr!=null)ST.thr=o.thr;if(o.fac)Object.assign(ST.fac,o.fac);if(o.dfac)Object.assign(ST.dfac,o.dfac);if(o.tg)ST.tg=o.tg;persist();cfgUI();if(R.length){buildTg();draw()}}catch(x){alert('File cấu hình không hợp lệ')}};rd.readAsText(f);e.target.value=''}
 function mkc(id,cfg){if(CH[id])CH[id].destroy();cfg.options=Object.assign({responsive:true,maintainAspectRatio:true},cfg.options);CH[id]=new Chart($(id),cfg)}
 const H={indexAxis:'y',aspectRatio:1.5},HS={indexAxis:'y',aspectRatio:1.5,scales:{x:{stacked:true},y:{stacked:true}}},NL={plugins:{legend:{display:false}}};
 
@@ -174,7 +174,7 @@ function draw(){
   return '<div class="k" style="--c:'+c[2]+'"><div class="l">'+c[0]+'</div><div class="n">'+fm(a)+'</div><div class="d">LM cùng ngày: <b>'+fm(lm[k])+'</b> '+dl(mtd[k],lm[k])+'</div>'+
   (t?'<div class="d">Target <b>'+fm(t)+'</b> · Actual <b>'+Math.round(a/t*100)+'%</b></div><div class="d">Gap <b>'+fm(g)+'</b>'+(g&&rem?' · '+fm(g/rem)+'/ngày (còn '+rem+' ngày)':'')+'</div>':'')+'</div>'}).join('');
 
- const G=grp(scAll,r=>r.nv),st=Object.keys(G).map(n=>({n,...met(G[n]),G:G[n]})).sort((a,b)=>b.vol-a.vol);
+ const G=grp(scAll,r=>r.nv),st=Object.keys(G).map(n=>({n,...met(G[n]),G:G[n]})).sort((a,b)=>NOKPI.includes(a.n)-NOKPI.includes(b.n)||b.vol-a.vol);
  
  const pc=(a,t)=>t?'<span class="db" style="width:'+Math.min(60,Math.round(a/t*60))+'px"></span>'+Math.round(a/t*100)+'%':'–',gp=(a,t)=>t?fm(Math.max(0,t-a)):'–',gd=(a,t)=>t&&rem?fm(Math.max(0,t-a)/rem):'–';
  const row=(n,m,t,isTotal=false)=>{
@@ -193,7 +193,7 @@ function draw(){
  };
 
  mkc('c1',{type:'bar',data:{labels:st.map(s=>s.n),datasets:SK.map(k=>({label:k[1],backgroundColor:k[2],data:st.map(s=>nf(s.G.reduce((a,r)=>a+nat(r,k[0]),0)))}))},options:{...HS, onClick: handleChartClick}});
- const sd=[...st].sort((a,b)=>b.dis-a.dis);
+ const sd=[...st].sort((a,b)=>NOKPI.includes(a.n)-NOKPI.includes(b.n)||b.dis-a.dis);
  mkc('c2',{type:'bar',data:{labels:sd.map(s=>s.n),datasets:[{label:D,backgroundColor:ULT,data:sd.map(s=>s.dis)}]},options:{...H,...NL, onClick: handleChartClick}});
 
  const getPieOptions = () => ({
@@ -218,7 +218,7 @@ function draw(){
    let total = v.reduce((a, b) => a + b, 0);
    let labelsWithPct = SK.map((k, i) => {
      let pct = total ? Math.round((v[i] / total) * 100) : 0;
-     return k[1] + ' (' + pct + '%)';
+     return k[1] + ' · ' + fm(v[i]) + ' (' + pct + '%)';
    });
 
    mkc(id, {
@@ -232,7 +232,7 @@ function draw(){
  };
 
  dn('c3', SK.map(k => sc.reduce((a, r) => a + nat(r, k[0]), 0)));
- dn('c4', SK.map(k => disN(sc, r => nat(r, k[0]))));
+ dn('c4', SK.map(k => disN(sc, r => natD(r, k[0]))));
 
  const sh=(v,t)=>t?'<span class="db" style="width:'+Math.round(v/t*50)+'px"></span>'+Math.round(v/t*100)+'%':'–',sdis=st.reduce((a,x)=>a+x.dis,0);
  $('tb').innerHTML='<tr><th>NV bán hàng</th><th>Vol</th><th>% Vol</th><th>'+D+'</th><th>% Dis</th><th>New POC</th><th>% New POC</th><th>New SKU</th><th>% New SKU</th></tr>'+
@@ -241,7 +241,7 @@ function draw(){
    return '<tr class="'+cls+'" onclick="toggleSR(\''+esc(s.n)+'\')"><td>'+esc(s.n)+'</td><td>'+fm(s.vol)+'</td><td>'+sh(s.vol,mtAll.vol)+'</td><td>'+s.dis+'</td><td>'+sh(s.dis,sdis)+'</td><td>'+s.np+'</td><td>'+sh(s.np,mtAll.np)+'</td><td>'+s.ns+'</td><td>'+sh(s.ns,mtAll.ns)+'</td></tr>';
  }).join('');
 
- const a1=[...st].sort((a,b)=>b.np-a.np),a2=[...st].sort((a,b)=>b.ns-a.ns);
+ const a1=[...st].sort((a,b)=>NOKPI.includes(a.n)-NOKPI.includes(b.n)||b.np-a.np),a2=[...st].sort((a,b)=>NOKPI.includes(a.n)-NOKPI.includes(b.n)||b.ns-a.ns);
  mkc('c5',{type:'bar',data:{labels:a1.map(s=>s.n),datasets:[{label:'New POC',backgroundColor:PINK,data:a1.map(s=>s.np)}]},options:{...H,...NL, onClick: handleChartClick}});
  mkc('c8',{type:'bar',data:{labels:a2.map(s=>s.n),datasets:SK.map(k=>({label:k[1],backgroundColor:k[2],data:a2.map(s=>s.G.reduce((a,r)=>a+r.mmk.filter(x=>x==k[0]).length,0))}))},options:{...HS, onClick: handleChartClick}});
 
