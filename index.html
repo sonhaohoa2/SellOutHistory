@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="vi"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -40,6 +41,7 @@ tr.sr-row{cursor:pointer;transition:background 0.2s}tr.sr-row:hover{background:r
 .mh{color:var(--gold);font-size:12px;font-weight:700;text-transform:uppercase;margin:12px 0 4px}.mh:first-child{margin-top:0}
 @media(max-width:760px){#mBody{flex-direction:column}#mPanel{width:100%;max-height:36%}}
 #set button{background:transparent;color:var(--gold);border:1.5px solid var(--gold);border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer}#set button:hover{background:var(--gold);color:#000}
+#mapScr .mb{background:transparent;color:var(--gold);border:1.5px solid var(--gold);border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer}#mapScr .mb:hover{background:var(--gold);color:#000}
 #mNoBox{display:none;position:absolute;top:70px;left:50%;transform:translateX(-50%);width:min(900px,94vw);max-height:75vh;overflow:auto;z-index:1300;background:var(--card);border:1px solid var(--gold);border-radius:10px;padding:14px;box-shadow:0 10px 40px #000}#mNoBox button{background:var(--gold);color:#000;border:0;border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer}
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#161616;color:#f4efe3}
 </style>
@@ -299,31 +301,35 @@ document.addEventListener('dragover',e=>{e.preventDefault();$('drop').classList.
 document.addEventListener('drop',e=>{e.preventDefault();$('drop').classList.remove('on');e.dataTransfer.files[0]&&load(e.dataTransfer.files[0])});
 </script>
 <div id="mapScr"><div class="mTop"><b><svg viewBox="0 0 24 24"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5z"/><path d="M5 22h14"/></svg>Tiềm năng địa bàn</b>
-<select id="mMon"></select><span id="mSt"></span><button class="btn" id="mX" style="background:var(--gold);color:#000;border:0;border-radius:6px;padding:7px 14px;font-weight:700;cursor:pointer">Đóng</button></div>
+<select id="mMon"></select><span id="mSt"></span><button class="mb" id="mImp">Nạp tọa độ</button><button class="mb" id="mExp">Lưu tọa độ</button><input type="file" id="mImpF" accept=".json" hidden><button class="btn" id="mX" style="background:var(--gold);color:#000;border:0;border-radius:6px;padding:7px 14px;font-weight:700;cursor:pointer">Đóng</button></div>
 <div id="mBody"><div id="mPanel"></div><div id="mapC"></div></div><div id="mNoBox"></div></div>
 <script>
 (function(){
 const PAL=['#ffc20e','#3d8bff','#e0182d','#37d67a','#f08fb0','#ff8a3d','#b78cff','#2fd3d3','#c7e03a','#ff6fb5','#9aa0a6'],g=id=>document.getElementById(id),sleep=t=>new Promise(r=>setTimeout(r,t));
-const FAST=true;let map,layer,GEO={},S=null,K=null,busy=false,fails=0,cnt=0;
+const FAST=true;let map,layer,GEO={},S=null,K=null,busy=false,fails=0,cnt=0,geoLoaded=false;
 try{GEO=JSON.parse(localStorage.getItem('geo_v1')||'{}')}catch(e){}
-if(!GEO.__v3){Object.keys(GEO).forEach(k=>{if(GEO[k]===0)delete GEO[k]});GEO.__v3=1;try{localStorage.setItem('geo_v1',JSON.stringify(GEO))}catch(e){}}
+if(GEO.__v4!==1){Object.keys(GEO).forEach(k=>{if(k.slice(0,2)!='__'&&(GEO[k]===0||(k.slice(0,2)!='q:'&&!/hà nội/i.test(k))))delete GEO[k]});GEO.__v4=1;try{localStorage.setItem('geo_v1',JSON.stringify(GEO))}catch(e){}}
 const sv=()=>{try{localStorage.setItem('geo_v1',JSON.stringify(GEO))}catch(e){}},ad=r=>r.addr||r.npa||'';
 function rows(){const M=g('mMon').value,c=$('fC').value;return R.filter(r=>(c=='all'||r.cls==c)&&(M=='all'||mk(r)==+M)&&ad(r))}
 const PA={'hải dương':'Hải Phòng','bắc giang':'Bắc Ninh','hà nam':'Ninh Bình','nam định':'Ninh Bình','thái bình':'Hưng Yên','vĩnh phúc':'Phú Thọ','hòa bình':'Phú Thọ','bắc kạn':'Thái Nguyên','hà giang':'Tuyên Quang','yên bái':'Lào Cai'},
  clp=t=>t.replace(/^(thành phố|tỉnh|tp\.?)\s+/i,'').trim(),isN=x=>/^\d+[a-zA-Z]?([\/-]\d+)*$/.test(x);
-function queries(a){const T=[];a.split(',').forEach(x=>{x=x.trim().replace(/(\d)\s*([\/-])\s*(\d)/g,'$1$2$3');if(x&&!/^[.\-]+$/.test(x)&&!/^việt nam$/i.test(x)&&!T.some(y=>y.toLowerCase()==x.toLowerCase()))T.push(x)});
+function queries(a){const T=[];a.split(',').forEach(x=>{x=x.trim().replace(/(\d)\s*([\/-])\s*(\d)/g,'$1$2$3').replace(/\bQL\s*(\d+)/gi,'Quốc lộ $1').replace(/\bĐT\s*(\d+)/gi,'Đường tỉnh $1').replace(/\bTL\s*(\d+)/gi,'Tỉnh lộ $1');if(x&&!/^[.\-]+$/.test(x)&&!/^việt nam$/i.test(x)&&!T.some(y=>y.toLowerCase()==x.toLowerCase()))T.push(x)});
  const wi=T.findIndex(x=>/^(phường|xã|thị trấn)\s/i.test(x)),W=wi>=0?T[wi]:'',rest=wi>=0?T.slice(wi+1):T.slice(-1),P=clp(rest.length?rest[rest.length-1]:''),D=rest.slice(0,-1).join(', '),
  det=(wi>=0?T.slice(0,wi):T.slice(0,-1)).filter(x=>!/^(tỉnh|thành phố|tp\.?)\s/i.test(x));
  let st='',hn='';for(let i=det.length-1;i>=0;i--){const x=det[i];if(!isN(x)){const m=/^(\d+[a-zA-Z]?(?:[\/-]\d+)*)\s+(.+)$/.exec(x);if(m){hn=m[1];st=m[2]}else{st=x;if(i&&isN(det[i-1]))hn=det[i-1]}break}}
  const j=(...q)=>q.filter(Boolean).join(', ')+', Việt Nam',PL=PA[P.toLowerCase()]||'',V=[],add=(q,l)=>{if(!V.some(v=>v[0]==q))V.push([q,l])};
- if(st){if(!FAST&&hn)add(j(hn+' '+st,W,D,P),1);add(j(st,W,D,P),2);if(PL)add(j(st,W,D,PL),2);if(W||D)add(j(st,D,P),2);add(j(st,P),2)}
- if(W){add(j(W,D,P),3);if(PL)add(j(W,D,PL),3)}if(D)add(j(D,P),4);if(!V.length)add(j(T.join(', ')),3);return V}
-async function geo1(a){for(const[q,lv]of queries(a)){const k='q:'+q;let r=GEO[k];if(r===undefined){const res=await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=3&countrycodes=vn&viewbox=104.4,22.7,108.2,19.5&q='+encodeURIComponent(q));if(!res.ok)throw new Error(res.status);const j=await res.json();await sleep(1100);const x=j.find(y=>+y.lat>19.5&&+y.lat<22.7&&+y.lon>104.4&&+y.lon<108.2);r=GEO[k]=x?[+x.lat,+x.lon]:0}if(r)return[r[0],r[1],lv]}return 0}
-function jit(a,lv,ll){if(lv<3)return ll;let h=0;for(const c of a)h=(h*31+c.charCodeAt(0))|0;const k=lv==4?.04:.006;return[ll[0]+((h%1000)/1000)*k,ll[1]+(((h>>10)%1000)/1000)*k]}
+ if(st){if(!FAST&&hn)add(j(hn+' '+st,W,D,P),1);add(j(st,W,D,P),2);if(PL)add(j(st,W,D,PL),2);if(W||D)add(j(st,D,P),2);add(j(st,P),2);const rm=/^((?:quốc lộ|đường tỉnh|tỉnh lộ)\s*\d+[a-zA-Z]?)\s+(.+)$/i.exec(st);if(rm){add(j(rm[1],rm[2],W,D,P),2);if(PL)add(j(rm[1],rm[2],W,D,PL),2);add(j(rm[2],W,D,P),3);if(PL)add(j(rm[2],W,D,PL),3)}}
+ if(W){add(j(W,D,P),3);if(PL)add(j(W,D,PL),3)}if(D)add(j(D,P),4);if(P){add(j(P),5);if(PL)add(j(PL),5)}if(!V.length)add(j(T.join(', ')),3);return V}
+const inB=(la,lo)=>la>19.5&&la<22.7&&lo>104.4&&lo<108.2;
+async function ask(q){const e=encodeURIComponent(q);
+ try{const res=await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=3&countrycodes=vn&viewbox=104.4,22.7,108.2,19.5&q='+e);if(!res.ok)throw 0;const j=await res.json();await sleep(1100);const x=j.find(y=>inB(+y.lat,+y.lon));return x?[+x.lat,+x.lon]:0}
+ catch(err){const res=await fetch('https://photon.komoot.io/api/?limit=3&bbox=104.4,19.5,108.2,22.7&q='+e);if(!res.ok)throw new Error(res.status);const j=await res.json();await sleep(800);const f=(j.features||[]).find(y=>inB(y.geometry.coordinates[1],y.geometry.coordinates[0]));return f?[f.geometry.coordinates[1],f.geometry.coordinates[0]]:0}}
+async function geo1(a){for(const[q,lv]of queries(a)){const k='q:'+q;let r=GEO[k];if(r===undefined)r=GEO[k]=await ask(q);if(r)return[r[0],r[1],lv]}return 0}
+function jit(a,lv,ll){if(lv<3)return ll;let h=0;for(const c of a)h=(h*31+c.charCodeAt(0))|0;const k=lv>=5?.06:lv==4?.04:.006;return[ll[0]+((h%1000)/1000)*k,ll[1]+(((h>>10)%1000)/1000)*k]}
 function status(m){const all=[...new Set(R.map(ad).filter(Boolean))],ok=all.filter(a=>GEO[a]).length,no=all.filter(a=>GEO[a]===0).length;g('mSt').innerHTML=m||(ok+no<all.length?'Đang xử lý ('+(ok+no)+'/'+all.length+')…':'Đã định vị '+ok+'/'+all.length+' địa chỉ')+(no?' · <a id="mNo" style="color:var(--gold);cursor:pointer;text-decoration:underline">'+no+' chưa tìm thấy</a>':'')}
 async function run(){if(busy)return;busy=true;
  while(true){const todo=[...new Set(R.map(ad).filter(a=>a&&!(a in GEO)))];if(!todo.length)break;const cur=new Set(rows().map(ad)),a=todo.find(x=>cur.has(x))||todo[0];
-  try{GEO[a]=await geo1(a);fails=0}catch(e){if(++fails>=3){status('Không kết nối được dịch vụ định vị (mạng hoặc bị chặn), mở lại màn hình này để thử tiếp');break}await sleep(3000);continue}
+  try{GEO[a]=await geo1(a);fails=0}catch(e){if(++fails>=3){status('Mạng này đang chặn dịch vụ định vị. Bấm Nạp tọa độ để dùng file đã lưu, hoặc thử lại ở mạng khác');break}await sleep(3000);continue}
   if(++cnt%6==0){sv();render()}else status()}
  sv();busy=false;if(!fails)status();render()}
 const col=n=>PAL[[...new Set(R.map(r=>r.nv))].sort().indexOf(n)%PAL.length],lb=k=>SK.find(s=>s[0]==k)[1],vol=r=>K?nat(r,K):tot(r);
@@ -332,14 +338,15 @@ function render(fit){if(!map||g('mapScr').style.display!='flex')return;
  all.forEach(r=>{if(vol(r)>0){const x=srs[r.nv]=srs[r.nv]||{v:0,p:new Set()};x.v+=vol(r);x.p.add(ad(r))}
   if(!S||r.nv==S)SK.forEach(k=>{const v=nat(r,k[0]);if(v>0){const x=sks[k[0]]=sks[k[0]]||{v:0,p:new Set()};x.v+=v;x.p.add(ad(r))}});
   if((!S||r.nv==S)&&vol(r)>0){const a=ad(r),x=P[a]=P[a]||{a,n:r.kh||r.np,nv:new Set(),v:0,sk:{}};x.nv.add(r.nv);x.v+=vol(r);SK.forEach(k=>x.sk[k[0]]=(x.sk[k[0]]||0)+nat(r,k[0]))}});
+ const na=new Set(R.filter(r=>!ad(r)&&(g('mMon').value=='all'||mk(r)==+g('mMon').value)&&($('fC').value=='all'||r.cls==$('fC').value)&&(!S||r.nv==S)&&vol(r)>0).map(r=>r.kh||r.np||'(không tên)'));
  const pts=Object.values(P),loc=pts.filter(p=>GEO[p.a]),mx=Math.max(1,...loc.map(p=>p.v));
  const it=(t,v,c,s,a)=>'<div class="mi'+(a?' act':'')+'" data-t="'+t+'" data-v="'+esc(v)+'"><i style="background:'+c+'"></i><span>'+esc(s[0])+'</span><small>'+s[1]+'</small></div>';
  g('mPanel').innerHTML='<div class="mh">Sales Rep</div>'+it('sr','','#fff',['Tất cả SR',fm(pts.reduce((a,p)=>a+p.v,0))],!S)+Object.keys(srs).sort(srSort).map(n=>it('sr',n,col(n),[n,fm(srs[n].v)+' · '+srs[n].p.size+' POC'],S==n)).join('')+
  '<div class="mh">SKU</div>'+it('sku','','#fff',['Tất cả SKU',''],!K)+SK.filter(k=>sks[k[0]]).map(k=>it('sku',k[0],k[2],[k[1],fm(sks[k[0]].v)+' · '+sks[k[0]].p.size+' POC'],K==k[0])).join('')+
- '<div class="mh">Hiển thị</div><div style="font-size:12px;color:var(--mut)">'+loc.length+'/'+pts.length+' POC đã lên bản đồ. Kích thước chấm theo Vol'+(K?' '+lb(K):'')+'.</div>';
+ '<div class="mh">Hiển thị</div><div style="font-size:12px;color:var(--mut)">'+loc.length+'/'+pts.length+' POC đã lên bản đồ. Kích thước chấm theo Vol'+(K?' '+lb(K):'')+'.'+(na.size?'<br><br>'+na.size+' POC chưa có địa chỉ nên không lên bản đồ: '+[...na].map(esc).join(', ')+'.':'')+'</div>';
  layer.clearLayers();const bs=[];
  loc.sort((a,b)=>b.v-a.v).forEach(p=>{const G=GEO[p.a],ll=jit(p.a,G[2],G),sr=[...p.nv],c=K?SK.find(k=>k[0]==K)[2]:col(sr[0]);bs.push(ll);
-  L.circleMarker(ll,{radius:5+17*Math.sqrt(p.v/mx),color:'#000',weight:1,fillColor:c,fillOpacity:.78}).addTo(layer).bindPopup('<b>'+esc(p.n)+'</b><br>'+esc(p.a)+'<br>SR: '+esc(sr.join(', '))+'<br>Vol: <b>'+fm(p.v)+'</b><br>'+SK.filter(k=>p.sk[k[0]]>0).map(k=>lb(k[0])+' '+fm(p.sk[k[0]])).join(' · ')+'<br><i style="color:#a79f8d">Vị trí theo '+['','số nhà','đường','phường/xã','quận/huyện'][G[2]]+'</i>')});
+  L.circleMarker(ll,{radius:5+17*Math.sqrt(p.v/mx),color:'#000',weight:1,fillColor:c,fillOpacity:.78}).addTo(layer).bindPopup('<b>'+esc(p.n)+'</b><br>'+esc(p.a)+'<br>SR: '+esc(sr.join(', '))+'<br>Vol: <b>'+fm(p.v)+'</b><br>'+SK.filter(k=>p.sk[k[0]]>0).map(k=>lb(k[0])+' '+fm(p.sk[k[0]])).join(' · ')+'<br><i style="color:#a79f8d">Vị trí theo '+['','số nhà','đường','phường/xã','quận/huyện','tỉnh/thành phố, gần đúng'][G[2]]+'</i>')});
  if(fit&&bs.length)map.fitBounds(bs,{padding:[40,40],maxZoom:16})}
 function open_(){g('mapScr').style.display='flex';const cur=$('fM').value;
  g('mMon').innerHTML='<option value="all">Tất cả tháng</option>'+[...new Set(R.map(mk))].sort().map(k=>'<option value="'+k+'">'+ml(k)+'</option>').join('');g('mMon').value=cur;S=(typeof selectedSR!='undefined'&&selectedSR)||null;K=null;
@@ -348,13 +355,18 @@ function open_(){g('mapScr').style.display='flex';const cur=$('fM').value;
  map.on('baselayerchange',e=>{bi=B.findIndex(b=>b[1]==e.layer);er=0});
  B.forEach((b,i)=>b[1].on('tileerror',()=>{if(i==bi&&bi==0&&++er==6){map.removeLayer(B[0][1]);B[1][1].addTo(map);er=0}}));
  layer=L.layerGroup().addTo(map)}
- status();setTimeout(()=>{map.invalidateSize();render(true);run()},60)}
+ status();setTimeout(()=>{map.invalidateSize();render(true);loadCache().then(()=>{status();render(true);run()})},60)}
 function showNo(){const A={};R.forEach(r=>{const a=ad(r);if(a&&GEO[a]===0){const x=A[a]=A[a]||{a,n:new Set(),s:new Set()};x.n.add(r.kh||r.np);x.s.add(r.nv)}});
  const L=Object.values(A).map(x=>({a:x.a,n:[...x.n].join('; '),s:[...x.s].join(', ')})),b=g('mNoBox');
  b.innerHTML='<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px"><b style="color:var(--gold);flex:1">Địa chỉ chưa tìm thấy ('+L.length+')</b><button id="nCp">Sao chép</button><button id="nRt">Tra lại</button><button id="nX">Đóng</button></div><table><tr><th>Tên POC</th><th>SR</th><th>Địa chỉ</th></tr>'+L.map(x=>'<tr><td style="white-space:normal;text-align:left">'+esc(x.n)+'</td><td style="text-align:left">'+esc(x.s)+'</td><td style="white-space:normal;text-align:left">'+esc(x.a)+'</td></tr>').join('')+'</table>';
  b.style.display='block';g('nX').onclick=()=>b.style.display='none';
  g('nCp').onclick=()=>{const t='Tên POC\tSR\tĐịa chỉ\n'+L.map(x=>[x.n,x.s,x.a].join('\t')).join('\n');(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).catch(()=>{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove()});g('nCp').textContent='Đã sao chép'};
  g('nRt').onclick=()=>{Object.keys(GEO).forEach(k=>{if(GEO[k]===0)delete GEO[k]});sv();b.style.display='none';run()}}
+const merge=o=>{let n=0;Object.keys(o).forEach(k=>{if(k.slice(0,2)!='__'&&o[k]&&(GEO[k]===undefined||GEO[k]===0)){GEO[k]=o[k];n++}});sv();return n},
+ loadCache=()=>geoLoaded?Promise.resolve():(geoLoaded=true,fetch('geo-cache.json').then(r=>r.ok?r.json():null).then(o=>{if(o)merge(o)}).catch(()=>{}));
+g('mExp').onclick=()=>{sv();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(Object.fromEntries(Object.entries(GEO).filter(([k,v])=>k.slice(0,2)!='__'&&v)))],{type:'application/json'}));a.download='geo-cache.json';a.click()};
+g('mImp').onclick=()=>g('mImpF').click();
+g('mImpF').onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const n=merge(JSON.parse(rd.result));status('Đã nạp '+n+' tọa độ');setTimeout(()=>{status();render(true);run()},1200)}catch(x){status('File tọa độ không hợp lệ')}};rd.readAsText(f);e.target.value=''};
 g('mSt').onclick=e=>{if(e.target.id=='mNo')showNo()};
 g('bMap').onclick=open_;g('mX').onclick=()=>g('mapScr').style.display='none';document.addEventListener('keydown',e=>{if(e.key=='Escape')g('mapScr').style.display='none'});
 g('mMon').onchange=()=>render(true);
