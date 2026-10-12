@@ -42,6 +42,7 @@ tr.sr-row{cursor:pointer;transition:background 0.2s}tr.sr-row:hover{background:r
 @media(max-width:760px){#mBody{flex-direction:column}#mPanel{width:100%;max-height:36%}}
 #set button{background:transparent;color:var(--gold);border:1.5px solid var(--gold);border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer}#set button:hover{background:var(--gold);color:#000}
 #mapScr .mb{background:transparent;color:var(--gold);border:1.5px solid var(--gold);border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer}#mapScr .mb:hover{background:var(--gold);color:#000}
+#rpScr{display:none;position:fixed;inset:0;z-index:1000;background:var(--bg);flex-direction:column}#rpBody{flex:1;overflow:auto;padding:12px 16px}#rpScr .mTop span{min-width:200px}#rpT th,#rpT th:first-child{text-align:center}
 #mNoBox{display:none;position:absolute;top:70px;left:50%;transform:translateX(-50%);width:min(900px,94vw);max-height:75vh;overflow:auto;z-index:1300;background:var(--card);border:1px solid var(--gold);border-radius:10px;padding:14px;box-shadow:0 10px 40px #000}#mNoBox button{background:var(--gold);color:#000;border:0;border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer}
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#161616;color:#f4efe3}
 </style>
@@ -172,9 +173,13 @@ function draw(){
  $('h0').textContent='Tổng quan Sales Sup · '+ml(M) + (selectedSR ? ' (' + selectedSR + ')' : '');
  $('t2').textContent=D+' theo NV';$('t4').textContent=D+' theo SKU';
  
+ const rpf=(Mx,cx)=>{const pv=new Set(base.filter(r=>mk(r)==pkey(Mx)&&r.d.getDate()<=cx&&r.ma&&hasO(r)).map(r=>r.ma));return base.filter(r=>mk(r)==Mx&&r.d.getDate()<=cx&&r.ma&&hasO(r)&&pv.has(r.ma))};
+ const rpRows=rpf(M,cut).sort((a,b)=>String(a.ma).localeCompare(String(b.ma),'vi')||a.d-b.d),rpN=new Set(rpRows.map(r=>r.ma)).size,rpLm=new Set(rpf(pm,cut).map(r=>r.ma)).size;
+ RPL={M,cut,rows:rpRows};
+ const rpCard='<div class="k" id="kRp" style="--c:#37d67a;cursor:pointer"><div class="l">Repurchase</div><div class="n">'+fm(rpN)+'</div><div class="d">LM cùng ngày: <b>'+fm(rpLm)+'</b> '+dl(rpN,rpLm)+'</div></div>';
  $('kp').innerHTML=[['Vol','vol',RED],[D,'dis',ULT],['New POC','np',PINK],['New SKU','ns',COR]].map(c=>{const k=c[1],a=mt[k],t=TT[k],g=Math.max(0,t-a);
   return '<div class="k" style="--c:'+c[2]+'"><div class="l">'+c[0]+'</div><div class="n">'+fm(a)+'</div><div class="d">LM cùng ngày: <b>'+fm(lm[k])+'</b> '+dl(mtd[k],lm[k])+'</div>'+
-  (t?'<div class="d">Target <b>'+fm(t)+'</b> · Actual <b>'+Math.round(a/t*100)+'%</b></div><div class="d">Gap <b>'+fm(g)+'</b>'+(g&&rem?' · '+fm(g/rem)+'/ngày (còn '+rem+' ngày)':'')+'</div>':'')+'</div>'}).join('');
+  (t?'<div class="d">Target <b>'+fm(t)+'</b> · Actual <b>'+Math.round(a/t*100)+'%</b></div><div class="d">Gap <b>'+fm(g)+'</b>'+(g&&rem?' · '+fm(g/rem)+'/ngày (còn '+rem+' ngày)':'')+'</div>':'')+'</div>'}).join('')+rpCard;$('kRp').onclick=openRp;
 
  const G=grp(scAll,r=>r.nv),st=Object.keys(G).map(n=>({n,...met(G[n]),G:G[n]})).sort((a,b)=>NOKPI.includes(a.n)-NOKPI.includes(b.n)||b.vol-a.vol);
  
@@ -299,6 +304,20 @@ $('bSet').onclick=()=>{$('set').classList.toggle('show');$('bSet').classList.tog
 $('bNew').onclick=()=>{$('f').value='';$('f').click()};$('drop').onclick=()=>$('f').click();$('f').onchange=e=>e.target.files[0]&&load(e.target.files[0]);
 document.addEventListener('dragover',e=>{e.preventDefault();$('drop').classList.add('on')});document.addEventListener('dragleave',()=>$('drop').classList.remove('on'));
 document.addEventListener('drop',e=>{e.preventDefault();$('drop').classList.remove('on');e.dataTransfer.files[0]&&load(e.dataTransfer.files[0])});
+
+let RPL={M:0,rows:[]};
+const hasO=r=>SK.some(s=>r.sku[s[0]]>0),pkey=k=>k%100==1?(Math.floor(k/100)-1)*100+12:k-1;
+const nz=t=>String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d');
+function rpRender(){const q=nz($('rpQ').value.trim()).split(/\s+/).filter(Boolean),rs=RPL.rows.filter(r=>{const h=nz(r.ma+' '+r.kh);return q.every(t=>h.includes(t))});
+ $('rpSt').textContent=new Set(rs.map(r=>r.ma)).size+' POC · '+rs.length+' đơn · '+ml(RPL.M)+' so với '+ml(pkey(RPL.M))+' · đến ngày '+RPL.cut;
+ $('rpT').innerHTML='<tr><th>Mã KH</th><th>Tên KH</th><th>SR</th><th>Đơn hàng SKU</th><th>Ngày</th></tr>'+(rs.length?rs.map(r=>'<tr><td style="text-align:left;white-space:normal;max-width:360px">'+esc(r.ma)+'</td><td style="text-align:left">'+esc(r.kh)+'</td><td style="text-align:left">'+esc(r.nv)+'</td><td style="text-align:left;white-space:normal">'+SK.filter(k=>r.sku[k[0]]>0).map(k=>k[1]+' × '+fm(r.sku[k[0]])).join(', ')+'</td><td>'+r.d.toLocaleDateString('vi-VN')+'</td></tr>').join(''):'<tr><td colspan=5>Không có dòng phù hợp</td></tr>')}
+function openRp(){$('rpScr').style.display='flex';$('rpQ').value='';rpRender()}
+</script>
+<div id="rpScr"><div class="mTop"><b>Repurchase</b><span id="rpSt"></span><input id="rpQ" placeholder="Tìm Mã KH hoặc Tên KH"><button class="btn" id="rpX" style="background:var(--gold);color:#000;border:0;border-radius:6px;padding:7px 14px;font-weight:700;cursor:pointer">Đóng</button></div><div id="rpBody"><table id="rpT"></table></div></div>
+<script>
+$('rpX').onclick=()=>$('rpScr').style.display='none';
+['input','keyup','compositionend'].forEach(e=>$('rpQ').addEventListener(e,rpRender));
+document.addEventListener('keydown',e=>{if(e.key=='Escape')$('rpScr').style.display='none'});
 </script>
 <div id="mapScr"><div class="mTop"><b><svg viewBox="0 0 24 24"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5z"/><path d="M5 22h14"/></svg>Tiềm năng địa bàn</b>
 <select id="mMon"></select><span id="mSt"></span><button class="mb" id="mImp">Nạp tọa độ</button><button class="mb" id="mExp">Lưu tọa độ</button><input type="file" id="mImpF" accept=".json" hidden><button class="btn" id="mX" style="background:var(--gold);color:#000;border:0;border-radius:6px;padding:7px 14px;font-weight:700;cursor:pointer">Đóng</button></div>
